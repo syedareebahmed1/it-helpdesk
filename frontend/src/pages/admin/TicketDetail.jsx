@@ -1,0 +1,356 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ticketsApi } from "../../api/tickets";
+import { usersApi } from "../../api/users";
+import { workflowsApi } from "../../api/workflows";
+import Sidebar from "../../components/Sidebar";
+import StatusBadge from "../../components/StatusBadge";
+import PriorityBadge from "../../components/PriorityBadge";
+import WorkflowDiagram from "../../components/WorkflowDiagram";
+import Modal from "../../components/Modal";
+import useAuthStore from "../../store/authStore";
+
+const TYPE_LABELS = {
+  onboarding: "Colleague Onboarding", offboarding: "Colleague Offboarding",
+  access_google: "Google Workspace Request", access_commando: "Commando Access Request",
+  access_nucleus: "Nucleus Access Request", access_superset: "SuperSet Access Request",
+  access_platform: "Platform Scopes Add/Remove", access_lending: "Lending Portal",
+  system_problem: "Report a System Problem",
+};
+
+const FIELD_LABELS = {
+  full_name: "Full Name", preferred_email: "Preferred Email ID", personal_email: "Personal Email ID",
+  job_title: "Job Title", date_of_joining: "Date of Joining", it_essentials: "IT Essentials",
+  application_requested: "Application Requested", employment_type: "Employment Type",
+  department: "Department", line_manager: "Line Manager", mobile_number: "Mobile Number",
+  employee_name: "Employee Name", employee_email: "Employee Email",
+  last_working_date: "Last Working Date", reason_for_leaving: "Reason for Leaving",
+  assets_to_return: "Assets to Return", requested_for: "Requested For",
+  request_type: "Request Type", access_type: "Access Type", justification: "Justification",
+  scope_action: "Action", scope_name: "Scope / Permission", platform: "Platform",
+  lending_module: "Lending Portal Module", affected_system: "Affected System",
+  problem_description: "Problem Description", steps_to_reproduce: "Steps to Reproduce",
+  impact_level: "Impact Level",
+};
+
+function formatFieldValue(val) {
+  if (!val) return <span className="text-gray-400">None</span>;
+  if (val.includes(",")) {
+    return (
+      <div className="flex flex-wrap gap-1 mt-0.5">
+        {val.split(",").map((v) => (
+          <span key={v} className="bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2 py-0.5 rounded">{v.trim()}</span>
+        ))}
+      </div>
+    );
+  }
+  return val;
+}
+
+export default function AdminTicketDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  const [ticket, setTicket] = useState(null);
+  const [workflow, setWorkflow] = useState(null);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [comment, setComment] = useState("");
+  const [isInternal, setIsInternal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [showWorkflow, setShowWorkflow] = useState(false);
+  const [updating, setUpdating] = useState(false);
+
+  const load = () => {
+    Promise.all([
+      ticketsApi.get(id),
+      usersApi.list(),
+    ]).then(([t, u]) => {
+      setTicket(t);
+      setAgents(u.filter((u) => u.role !== "customer"));
+      return workflowsApi.get(t.ticket_type);
+    }).then(setWorkflow).catch(() => {}).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [id]);
+
+  const handleStatusChange = async (newStatus) => {
+    setUpdating(true);
+    try {
+      await ticketsApi.update(id, { status: newStatus });
+      await load();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAssigneeChange = async (assignee_id) => {
+    await ticketsApi.update(id, { assignee_id: assignee_id ? parseInt(assignee_id) : null });
+    load();
+  };
+
+  const handlePriorityChange = async (priority) => {
+    await ticketsApi.update(id, { priority });
+    load();
+  };
+
+  const handleComment = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+    setSubmitting(true);
+    try {
+      await ticketsApi.addComment(id, comment, isInternal);
+      setComment("");
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const allowedTransitions = () => {
+    if (!workflow || !ticket) return [];
+    const seen = new Set();
+    return workflow.transitions
+      .filter((t) => t.from_state === ticket.status || t.from_state === "*")
+      .map((t) => t.to_state)
+      .filter((s) => s !== ticket.status)
+      .filter((s) => { if (seen.has(s)) return false; seen.add(s); return true; });
+  };
+
+  if (loading) return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center text-gray-400">Loading...</div></div>;
+  if (!ticket) return <div className="flex min-h-screen"><Sidebar /><div className="flex-1 flex items-center justify-center text-gray-400">Ticket not found</div></div>;
+
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 bg-[#f4f5f7] overflow-auto">
+        {/* Top bar */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3 text-sm">
+          <button onClick={() => navigate(-1)} className="text-[#0052cc] hover:underline flex items-center gap-1">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+          <span className="text-gray-400">·</span>
+          <span className="font-semibold text-gray-700">{ticket.ticket_number}</span>
+        </div>
+
+        <div className="flex gap-0">
+          {/* Main content */}
+          <div className="flex-1 px-6 py-5">
+            <h1 className="text-xl font-bold text-gray-900 mb-1">{ticket.title}</h1>
+            <p className="text-gray-400 text-xs mb-5">
+              {TYPE_LABELS[ticket.ticket_type]} · Raised by <span className="text-gray-600">{ticket.reporter?.full_name}</span> on {new Date(ticket.created_at).toLocaleString()}
+            </p>
+
+            {/* Status transition buttons */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-medium">Status:</span>
+                  <StatusBadge status={ticket.status} />
+                </div>
+                {allowedTransitions().length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Transition to →</span>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {allowedTransitions().map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => handleStatusChange(s)}
+                          disabled={updating}
+                          className="text-xs px-3 py-1 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowWorkflow(true)}
+                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-1"
+                >
+                  View Workflow
+                </button>
+              </div>
+            </div>
+
+            {/* Form fields */}
+            <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-sm font-semibold text-gray-700">Request Details</h2>
+                <span className="text-xs text-gray-400">via Portal</span>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-8 gap-y-4">
+                {ticket.field_values.map((fv) => (
+                  <div key={fv.field_key}>
+                    <dt className="text-xs text-gray-500">{FIELD_LABELS[fv.field_key] || fv.field_key.replace(/_/g, " ")}</dt>
+                    <dd className="text-sm text-gray-800 font-medium mt-0.5">{formatFieldValue(fv.field_value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {/* Description */}
+            {ticket.description && (
+              <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                <h2 className="text-sm font-semibold text-gray-700 mb-2">Description</h2>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+              </div>
+            )}
+
+            {/* Activity */}
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h2 className="text-sm font-semibold text-gray-700 mb-4">Activity</h2>
+
+              <div className="space-y-4 mb-5">
+                {/* History */}
+                {ticket.history.map((h) => (
+                  <div key={h.id} className="flex gap-2 text-xs text-gray-500 items-center">
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold flex-shrink-0">
+                      {h.changed_by.full_name[0]}
+                    </div>
+                    <span>
+                      <span className="font-medium text-gray-700">{h.changed_by.full_name}</span>
+                      {" changed "}<strong>{h.field_name}</strong>
+                      {h.old_value && <> from <span className="font-medium">{h.old_value}</span></>}
+                      {h.new_value && <> to <span className="font-medium text-blue-600">{h.new_value}</span></>}
+                    </span>
+                    <span className="ml-auto whitespace-nowrap">{new Date(h.created_at).toLocaleString()}</span>
+                  </div>
+                ))}
+
+                {/* Comments */}
+                {ticket.comments.map((c) => (
+                  <div key={c.id} className={`flex gap-3 ${c.is_internal ? "bg-yellow-50 border border-yellow-100 rounded-lg p-3 -mx-3" : ""}`}>
+                    <div className="w-7 h-7 rounded-full bg-[#0052cc] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                      {c.author.full_name[0]}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500">
+                        <span className="font-semibold text-gray-800">{c.author.full_name}</span>
+                        {c.is_internal && <span className="ml-1.5 text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded text-xs">Internal note</span>}
+                        <span className="ml-2">{new Date(c.created_at).toLocaleString()}</span>
+                      </p>
+                      <p className="text-sm text-gray-800 mt-1">{c.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add comment */}
+              <form onSubmit={handleComment} className="space-y-2">
+                <div className="flex gap-2 text-xs mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsInternal(false)}
+                    className={`px-3 py-1 rounded border transition-colors ${!isInternal ? "border-blue-400 bg-blue-50 text-blue-600" : "border-gray-200 text-gray-500"}`}
+                  >
+                    Reply to customer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsInternal(true)}
+                    className={`px-3 py-1 rounded border transition-colors ${isInternal ? "border-yellow-400 bg-yellow-50 text-yellow-700" : "border-gray-200 text-gray-500"}`}
+                  >
+                    Internal note
+                  </button>
+                </div>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={3}
+                  placeholder={isInternal ? "Add an internal note (only visible to agents)..." : "Reply to the customer..."}
+                  className={`w-full border rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 ${
+                    isInternal ? "border-yellow-200 bg-yellow-50 focus:ring-yellow-300" : "border-gray-300 focus:ring-blue-500"
+                  }`}
+                />
+                <button
+                  type="submit"
+                  disabled={submitting || !comment.trim()}
+                  className="bg-[#0052cc] hover:bg-[#0747a6] text-white text-sm font-medium px-4 py-2 rounded disabled:opacity-50"
+                >
+                  {submitting ? "Saving..." : isInternal ? "Save Note" : "Reply"}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right panel */}
+          <div className="w-64 flex-shrink-0 border-l border-gray-200 bg-white px-4 py-5 space-y-5">
+            {/* Priority */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Priority</p>
+              <select
+                value={ticket.priority}
+                onChange={(e) => handlePriorityChange(e.target.value)}
+                className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {["P1", "P2", "P3", "P4"].map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+
+            {/* Assignee */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Assignee</p>
+              <select
+                value={ticket.assignee_id || ""}
+                onChange={(e) => handleAssigneeChange(e.target.value || null)}
+                className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Unassigned</option>
+                {agents.map((a) => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+              </select>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Details */}
+            <div className="space-y-3 text-sm">
+              {[
+                { label: "Reporter", val: ticket.reporter?.full_name },
+                { label: "Request Type", val: TYPE_LABELS[ticket.ticket_type] || ticket.ticket_type },
+                { label: "Department", val: ticket.department || "—" },
+                { label: "Created", val: new Date(ticket.created_at).toLocaleDateString() },
+                { label: "Updated", val: new Date(ticket.updated_at).toLocaleDateString() },
+              ].map(({ label, val }) => (
+                <div key={label}>
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="text-gray-800 font-medium">{val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Workflow modal */}
+      <Modal open={showWorkflow} onClose={() => setShowWorkflow(false)} title={workflow?.name || "Workflow"} size="lg">
+        <div className="space-y-3">
+          <div className="flex gap-3 text-sm">
+            <div>
+              <p className="text-xs text-gray-500">Current status</p>
+              <StatusBadge status={ticket.status} className="mt-1" />
+            </div>
+            {allowedTransitions().length > 0 && (
+              <div>
+                <p className="text-xs text-gray-500">Can move to</p>
+                <div className="flex gap-1 flex-wrap mt-1">
+                  {allowedTransitions().map((s) => <StatusBadge key={s} status={s} />)}
+                </div>
+              </div>
+            )}
+          </div>
+          <WorkflowDiagram workflow={workflow} currentStatus={ticket.status} />
+        </div>
+      </Modal>
+    </div>
+  );
+}
