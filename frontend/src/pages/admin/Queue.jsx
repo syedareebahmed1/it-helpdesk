@@ -9,32 +9,80 @@ import PriorityBadge from "../../components/PriorityBadge";
 
 const TYPE_LABELS = {
   onboarding: "Colleague Onboarding", offboarding: "Colleague Offboarding",
+  incident: "Incident", hardware_request: "Hardware Request",
   access_google: "Google Workspace", access_commando: "Commando Access",
   access_nucleus: "Nucleus Access", access_superset: "SuperSet Access",
   access_platform: "Platform Scopes", access_lending: "Lending Portal",
-  system_problem: "System Problem",
+  system_problem: "System Problem", it_service_request: "IT Service Request",
 };
 
+const ALL_STATUSES = [
+  "WAITING FOR APPROVAL","WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS",
+  "HOLD","PENDING VENDOR","PENDING","CREATE CREDENTIALS","CLOSE CREDENTIALS",
+  "WAITING FOR LAPTOP","OPEN","WORK IN PROGRESS","COMPLETED",
+  "RESOLVED","CANCELED","REJECTED","CLOSED",
+];
+
 const QUEUE_CONFIG = {
+  unassigned: {
+    label: "Unassigned Tickets",
+    types: null,
+    statuses: ALL_STATUSES,
+    filterAssignee: "none",
+  },
   service_requests: {
     label: "Service Requests",
-    types: ["access_google", "access_commando", "access_nucleus", "access_superset", "access_platform", "access_lending", "system_problem"],
-    statuses: ["AWAITING APPROVAL", "WAITING FOR SUPPORT", "ACKNOWLEDGE", "IN PROGRESS", "HOLD", "RESOLVED", "REJECTED"],
+    types: ["access_google","access_commando","access_nucleus","access_superset","access_platform","access_lending","system_problem","it_service_request"],
+    statuses: ["WAITING FOR APPROVAL","WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","RESOLVED","REJECTED","CANCELED"],
+  },
+  incidents: {
+    label: "Incidents",
+    types: ["incident"],
+    statuses: ["OPEN","WORK IN PROGRESS","PENDING","COMPLETED","CANCELED","CLOSED"],
+  },
+  hardware: {
+    label: "Hardware Requests",
+    types: ["hardware_request"],
+    statuses: ["WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","PENDING VENDOR","RESOLVED","CANCELED"],
   },
   onboarding: {
     label: "Onboarding",
     types: ["onboarding"],
-    statuses: ["WAITING FOR SUPPORT", "ACKNOWLEDGE", "IN PROGRESS", "HOLD", "NOT JOINING", "RESOLVED"],
+    statuses: ["WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","CREATE CREDENTIALS","RESOLVED","CANCELED"],
   },
   offboarding: {
     label: "Offboarding",
     types: ["offboarding"],
-    statuses: ["WAITING FOR SUPPORT", "ACKNOWLEDGE", "IN PROGRESS", "HOLD", "NOT APPROVED", "CLOSE CREDENTIALS", "WAITING FOR LAPTOP", "RESOLVED"],
+    statuses: ["WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","CLOSE CREDENTIALS","WAITING FOR LAPTOP","RESOLVED","CANCELED"],
+  },
+  pending_approval: {
+    label: "Pending Approval",
+    types: null,
+    statuses: ALL_STATUSES,
+    filterStatus: "WAITING FOR APPROVAL",
+  },
+  in_progress: {
+    label: "In Progress",
+    types: null,
+    statuses: ALL_STATUSES,
+    filterStatus: "IN PROGRESS",
+  },
+  hold: {
+    label: "On Hold",
+    types: null,
+    statuses: ALL_STATUSES,
+    filterStatus: "HOLD",
+  },
+  resolved: {
+    label: "All Resolved",
+    types: null,
+    statuses: ALL_STATUSES,
+    filterStatus: "RESOLVED",
   },
   all: {
     label: "All Tickets",
     types: null,
-    statuses: ["WAITING FOR SUPPORT", "ACKNOWLEDGE", "IN PROGRESS", "HOLD", "CLOSE CREDENTIALS", "WAITING FOR LAPTOP", "NOT JOINING", "NOT APPROVED", "RESOLVED", "REJECTED"],
+    statuses: ALL_STATUSES,
   },
 };
 
@@ -75,8 +123,10 @@ export default function Queue() {
 
   const load = () => {
     setLoading(true);
+    // Use config-level filterStatus if no user filter applied
+    const effectiveStatus = statusFilter || config.filterStatus || undefined;
     const params = {
-      status: statusFilter || undefined,
+      status: effectiveStatus,
       q: search || undefined,
       full_name: employeeName || undefined,
       page,
@@ -92,6 +142,7 @@ export default function Queue() {
         let all = results.flatMap((r) => r.items);
         // client-side filtering for assignee & date
         if (assigneeFilter) all = all.filter((t) => String(t.assignee_id) === assigneeFilter);
+        if (config.filterAssignee === "none") all = all.filter((t) => !t.assignee_id);
         if (dateFrom) all = all.filter((t) => new Date(t.created_at) >= new Date(dateFrom));
         if (dateTo) all = all.filter((t) => new Date(t.created_at) <= new Date(dateTo + "T23:59:59"));
         all.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

@@ -80,25 +80,17 @@ export default function Sidebar() {
         <NavItem to="/admin" end icon={ICON_DASH} label="Dashboard" />
 
         <p className="px-3 pt-3 pb-0.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Queues</p>
-        <NavItem
-          to="/admin/queues/service_requests"
-          icon={ICON_QUEUES}
-          label="Service Requests"
-          count={counts.service_requests}
-        />
-        <NavItem
-          to="/admin/queues/onboarding"
-          icon={ICON_QUEUES}
-          label="Onboarding"
-          count={counts.onboarding}
-        />
-        <NavItem
-          to="/admin/queues/offboarding"
-          icon={ICON_QUEUES}
-          label="Offboarding"
-          count={counts.offboarding}
-        />
-        <NavItem to="/admin/queues/all" icon={ICON_QUEUES} label="All Tickets" />
+        <NavItem to="/admin/queues/unassigned"       icon={ICON_QUEUES} label="Unassigned"       count={counts.unassigned} />
+        <NavItem to="/admin/queues/service_requests" icon={ICON_QUEUES} label="Service Requests" count={counts.service_requests} />
+        <NavItem to="/admin/queues/incidents"        icon={ICON_QUEUES} label="Incidents"        count={counts.incidents} />
+        <NavItem to="/admin/queues/hardware"         icon={ICON_QUEUES} label="Hardware Requests" count={counts.hardware} />
+        <NavItem to="/admin/queues/onboarding"       icon={ICON_QUEUES} label="Onboarding"       count={counts.onboarding} />
+        <NavItem to="/admin/queues/offboarding"      icon={ICON_QUEUES} label="Offboarding"      count={counts.offboarding} />
+        <NavItem to="/admin/queues/pending_approval" icon={ICON_QUEUES} label="Pending Approval" count={counts.pending_approval} />
+        <NavItem to="/admin/queues/in_progress"      icon={ICON_QUEUES} label="In Progress"      count={counts.in_progress} />
+        <NavItem to="/admin/queues/hold"             icon={ICON_QUEUES} label="On Hold"          count={counts.hold} />
+        <NavItem to="/admin/queues/resolved"         icon={ICON_QUEUES} label="All Resolved"     count={counts.resolved} />
+        <NavItem to="/admin/queues/all"              icon={ICON_QUEUES} label="All Tickets" />
 
         <p className="px-3 pt-3 pb-0.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Settings</p>
         <NavItem to="/admin/workflows" icon={ICON_WORKFLOW} label="Workflows" />

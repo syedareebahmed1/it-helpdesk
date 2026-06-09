@@ -1,6 +1,8 @@
 TICKET_TYPES = {
     "onboarding": "Colleague Onboarding",
     "offboarding": "Colleague Offboarding",
+    "incident": "Incident",
+    "hardware_request": "Hardware Request",
     "access_google": "Google Workspace Request",
     "access_commando": "Commando Access Request",
     "access_nucleus": "Nucleus Access Request",
@@ -8,6 +10,7 @@ TICKET_TYPES = {
     "access_platform": "Platform Scopes Add/Remove",
     "access_lending": "Lending Portal",
     "system_problem": "Report a System Problem",
+    "it_service_request": "IT Service Request",
 }
 
 TICKET_FORM_FIELDS = {
@@ -96,6 +99,33 @@ TICKET_FORM_FIELDS = {
         {"key": "impact_level", "label": "Impact Level", "type": "select",
          "options": ["Low", "Medium", "High", "Critical"], "required": True},
     ],
+    "incident": [
+        {"key": "summary", "label": "Summary", "type": "text", "required": True},
+        {"key": "affected_system", "label": "Affected System / Service", "type": "text", "required": True},
+        {"key": "incident_description", "label": "Incident Description", "type": "textarea", "required": True},
+        {"key": "impact_level", "label": "Impact Level", "type": "select",
+         "options": ["Low", "Medium", "High", "Critical"], "required": True},
+        {"key": "steps_to_reproduce", "label": "Steps to Reproduce", "type": "textarea", "required": False},
+        {"key": "workaround", "label": "Workaround Available", "type": "select",
+         "options": ["Yes", "No"], "required": False},
+        {"key": "comments", "label": "Comments", "type": "textarea", "required": False},
+    ],
+    "hardware_request": [
+        {"key": "requested_for", "label": "Requested For (Name/Email)", "type": "text", "required": True},
+        {"key": "hardware_type", "label": "Hardware Type", "type": "select",
+         "options": ["Laptop", "Desktop", "Monitor", "Keyboard/Mouse", "Mobile Device", "Headset", "Other"], "required": True},
+        {"key": "justification", "label": "Justification / Business Need", "type": "textarea", "required": True},
+        {"key": "urgency", "label": "Urgency", "type": "select",
+         "options": ["Low", "Medium", "High"], "required": False},
+        {"key": "comments", "label": "Comments", "type": "textarea", "required": False},
+    ],
+    "it_service_request": [
+        {"key": "requested_for", "label": "Requested For (Name/Email)", "type": "text", "required": True},
+        {"key": "request_type", "label": "Request Type", "type": "select",
+         "options": ["New Setup", "Configuration Change", "Software Install", "Other"], "required": True},
+        {"key": "description", "label": "Description", "type": "textarea", "required": True},
+        {"key": "comments", "label": "Comments", "type": "textarea", "required": False},
+    ],
 }
 
 WORKFLOW_DEFINITIONS = {
@@ -146,6 +176,94 @@ WORKFLOW_DEFINITIONS = {
             {"from_state": "IN PROGRESS",         "to_state": "CANCELED",          "label": "Canceled"},
         ],
     },
+    "incident": {
+        "name": "IT: Incident Management Workflow",
+        "states": [
+            {"name": "OPEN",             "color": "#dbeafe", "text_color": "#1e40af", "is_initial": True,  "is_terminal": False, "order": 0},
+            {"name": "WORK IN PROGRESS", "color": "#3b82f6", "text_color": "#ffffff", "is_initial": False, "is_terminal": False, "order": 1},
+            {"name": "PENDING",          "color": "#fed7aa", "text_color": "#9a3412", "is_initial": False, "is_terminal": False, "order": 2},
+            {"name": "COMPLETED",        "color": "#bbf7d0", "text_color": "#14532d", "is_initial": False, "is_terminal": True,  "order": 3},
+            {"name": "CANCELED",         "color": "#fecaca", "text_color": "#7f1d1d", "is_initial": False, "is_terminal": True,  "order": 4},
+            {"name": "CLOSED",           "color": "#f1f5f9", "text_color": "#475569", "is_initial": False, "is_terminal": True,  "order": 5},
+        ],
+        "transitions": [
+            {"from_state": "OPEN",             "to_state": "WORK IN PROGRESS", "label": "Investigate"},
+            {"from_state": "OPEN",             "to_state": "PENDING",          "label": "Pending"},
+            {"from_state": "OPEN",             "to_state": "COMPLETED",        "label": "Resolve"},
+            {"from_state": "OPEN",             "to_state": "CANCELED",         "label": "Cancel"},
+            {"from_state": "WORK IN PROGRESS", "to_state": "PENDING",          "label": "Pending"},
+            {"from_state": "WORK IN PROGRESS", "to_state": "COMPLETED",        "label": "Resolve"},
+            {"from_state": "WORK IN PROGRESS", "to_state": "CANCELED",         "label": "Cancel"},
+            {"from_state": "PENDING",          "to_state": "WORK IN PROGRESS", "label": "Back to Work in Progress"},
+            {"from_state": "PENDING",          "to_state": "CANCELED",         "label": "Cancel"},
+            {"from_state": "COMPLETED",        "to_state": "CLOSED",           "label": "Close"},
+            {"from_state": "CANCELED",         "to_state": "CLOSED",           "label": "Close"},
+        ],
+    },
+    "hardware_request": {
+        "name": "IT: Hardware Request Workflow",
+        "states": [
+            {"name": "WAITING FOR SUPPORT", "color": "#dbeafe", "text_color": "#1e40af", "is_initial": True,  "is_terminal": False, "order": 0},
+            {"name": "ACKNOWLEDGE",         "color": "#bfdbfe", "text_color": "#1d4ed8", "is_initial": False, "is_terminal": False, "order": 1},
+            {"name": "IN PROGRESS",         "color": "#3b82f6", "text_color": "#ffffff", "is_initial": False, "is_terminal": False, "order": 2},
+            {"name": "HOLD",                "color": "#fed7aa", "text_color": "#9a3412", "is_initial": False, "is_terminal": False, "order": 3},
+            {"name": "PENDING VENDOR",      "color": "#e0e7ff", "text_color": "#4338ca", "is_initial": False, "is_terminal": False, "order": 4},
+            {"name": "CANCELED",            "color": "#fecaca", "text_color": "#7f1d1d", "is_initial": False, "is_terminal": True,  "order": 5},
+            {"name": "RESOLVED",            "color": "#bbf7d0", "text_color": "#14532d", "is_initial": False, "is_terminal": True,  "order": 6},
+        ],
+        "transitions": [
+            {"from_state": "WAITING FOR SUPPORT", "to_state": "ACKNOWLEDGE",    "label": "Acknowledged"},
+            {"from_state": "ACKNOWLEDGE",          "to_state": "IN PROGRESS",   "label": "In Progress"},
+            {"from_state": "IN PROGRESS",          "to_state": "HOLD",          "label": "Hold"},
+            {"from_state": "IN PROGRESS",          "to_state": "PENDING VENDOR","label": "Pending Vendor"},
+            {"from_state": "IN PROGRESS",          "to_state": "RESOLVED",      "label": "Resolved"},
+            {"from_state": "IN PROGRESS",          "to_state": "CANCELED",      "label": "Canceled"},
+            {"from_state": "HOLD",                 "to_state": "IN PROGRESS",   "label": "Back in Progress"},
+            {"from_state": "PENDING VENDOR",       "to_state": "IN PROGRESS",   "label": "Back in Progress"},
+        ],
+    },
+    "service_request_approval": {
+        "name": "IT: Service Request with Approval Workflow",
+        "states": [
+            {"name": "WAITING FOR APPROVAL", "color": "#fef9c3", "text_color": "#854d0e", "is_initial": True,  "is_terminal": False, "order": 0},
+            {"name": "WAITING FOR SUPPORT",  "color": "#dbeafe", "text_color": "#1e40af", "is_initial": False, "is_terminal": False, "order": 1},
+            {"name": "ACKNOWLEDGE",          "color": "#bfdbfe", "text_color": "#1d4ed8", "is_initial": False, "is_terminal": False, "order": 2},
+            {"name": "IN PROGRESS",          "color": "#3b82f6", "text_color": "#ffffff", "is_initial": False, "is_terminal": False, "order": 3},
+            {"name": "HOLD",                 "color": "#fed7aa", "text_color": "#9a3412", "is_initial": False, "is_terminal": False, "order": 4},
+            {"name": "REJECTED",             "color": "#fecaca", "text_color": "#7f1d1d", "is_initial": False, "is_terminal": True,  "order": 5},
+            {"name": "CANCELED",             "color": "#fee2e2", "text_color": "#991b1b", "is_initial": False, "is_terminal": True,  "order": 6},
+            {"name": "RESOLVED",             "color": "#bbf7d0", "text_color": "#14532d", "is_initial": False, "is_terminal": True,  "order": 7},
+        ],
+        "transitions": [
+            {"from_state": "WAITING FOR APPROVAL", "to_state": "WAITING FOR SUPPORT", "label": "Approved"},
+            {"from_state": "WAITING FOR APPROVAL", "to_state": "REJECTED",            "label": "Rejected by Approver"},
+            {"from_state": "WAITING FOR SUPPORT",  "to_state": "ACKNOWLEDGE",         "label": "Acknowledged"},
+            {"from_state": "ACKNOWLEDGE",           "to_state": "IN PROGRESS",         "label": "In Progress"},
+            {"from_state": "IN PROGRESS",           "to_state": "HOLD",                "label": "On Hold"},
+            {"from_state": "IN PROGRESS",           "to_state": "RESOLVED",            "label": "Resolved"},
+            {"from_state": "IN PROGRESS",           "to_state": "CANCELED",            "label": "Rejected"},
+            {"from_state": "HOLD",                  "to_state": "IN PROGRESS",         "label": "Back in Progress"},
+            {"from_state": "WAITING FOR SUPPORT",   "to_state": "RESOLVED",            "label": "Resolved"},
+        ],
+    },
+    "it_service_request": {
+        "name": "IT: Service Request For IT Workflow",
+        "states": [
+            {"name": "WAITING FOR SUPPORT", "color": "#dbeafe", "text_color": "#1e40af", "is_initial": True,  "is_terminal": False, "order": 0},
+            {"name": "ACKNOWLEDGE",         "color": "#bfdbfe", "text_color": "#1d4ed8", "is_initial": False, "is_terminal": False, "order": 1},
+            {"name": "IN PROGRESS",         "color": "#3b82f6", "text_color": "#ffffff", "is_initial": False, "is_terminal": False, "order": 2},
+            {"name": "HOLD",                "color": "#fed7aa", "text_color": "#9a3412", "is_initial": False, "is_terminal": False, "order": 3},
+            {"name": "RESOLVED",            "color": "#bbf7d0", "text_color": "#14532d", "is_initial": False, "is_terminal": True,  "order": 4},
+        ],
+        "transitions": [
+            {"from_state": "WAITING FOR SUPPORT", "to_state": "ACKNOWLEDGE", "label": "Acknowledged"},
+            {"from_state": "ACKNOWLEDGE",          "to_state": "IN PROGRESS", "label": "In Progress"},
+            {"from_state": "IN PROGRESS",          "to_state": "HOLD",        "label": "Hold"},
+            {"from_state": "IN PROGRESS",          "to_state": "RESOLVED",    "label": "Resolved"},
+            {"from_state": "WAITING FOR SUPPORT",  "to_state": "RESOLVED",    "label": "Resolved"},
+            {"from_state": "HOLD",                 "to_state": "IN PROGRESS", "label": "Back in Progress"},
+        ],
+    },
     "default": {
         "name": "Standard Request Workflow",
         "states": [
@@ -175,11 +293,16 @@ WORKFLOW_DEFINITIONS = {
 
 
 def get_workflow_key(ticket_type: str) -> str:
-    if ticket_type == "onboarding":
-        return "onboarding"
-    if ticket_type == "offboarding":
-        return "offboarding"
-    return "default"
+    mapping = {
+        "onboarding": "onboarding",
+        "offboarding": "offboarding",
+        "incident": "incident",
+        "hardware_request": "hardware_request",
+        "it_service_request": "it_service_request",
+        "access_commando": "service_request_approval",
+        "access_lending": "service_request_approval",
+    }
+    return mapping.get(ticket_type, "default")
 
 
 def get_initial_status(ticket_type: str) -> str:
