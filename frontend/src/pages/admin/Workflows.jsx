@@ -87,13 +87,12 @@ export default function Workflows() {
     }));
   };
 
-  const addTransition = () => {
+  const addTransition = (biDirectional = false) => {
     const first = editing.states[0]?.name || "";
     const second = editing.states[1]?.name || "";
-    setEditing((e) => ({
-      ...e,
-      transitions: [...e.transitions, { id: Date.now(), from_state: first, to_state: second, label: null }],
-    }));
+    const newTransitions = [{ id: Date.now(), from_state: first, to_state: second, label: null }];
+    if (biDirectional) newTransitions.push({ id: Date.now() + 1, from_state: second, to_state: first, label: null });
+    setEditing((e) => ({ ...e, transitions: [...e.transitions, ...newTransitions] }));
   };
 
   return (
@@ -199,33 +198,62 @@ export default function Workflows() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-medium text-gray-600">Transitions</label>
-                <button onClick={addTransition} className="text-xs text-blue-600 hover:underline">+ Add Transition</button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => addTransition(false)}
+                    className="flex items-center gap-1 text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 px-2 py-1 rounded"
+                    title="Single direction: A → B"
+                  >
+                    + One-way <span className="font-bold">→</span>
+                  </button>
+                  <button
+                    onClick={() => addTransition(true)}
+                    className="flex items-center gap-1 text-xs text-purple-600 border border-purple-200 hover:bg-purple-50 px-2 py-1 rounded"
+                    title="Bidirectional: A ↔ B"
+                  >
+                    + Two-way <span className="font-bold">⇄</span>
+                  </button>
+                </div>
               </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {editing.transitions.map((t, i) => (
-                  <div key={t.id} className="flex items-center gap-2">
-                    <select
-                      value={t.from_state}
-                      onChange={(e) => setEditing((ed) => ({ ...ed, transitions: ed.transitions.map((tr, j) => j === i ? { ...tr, from_state: e.target.value } : tr) }))}
-                      className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs bg-white"
-                    >
-                      <option value="*">Any (*)</option>
-                      {editing.states.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                    </select>
-                    <span className="text-gray-400">→</span>
-                    <select
-                      value={t.to_state}
-                      onChange={(e) => setEditing((ed) => ({ ...ed, transitions: ed.transitions.map((tr, j) => j === i ? { ...tr, to_state: e.target.value } : tr) }))}
-                      className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs bg-white"
-                    >
-                      {editing.states.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                    </select>
-                    <button
-                      onClick={() => setEditing((e) => ({ ...e, transitions: e.transitions.filter((_, j) => j !== i) }))}
-                      className="text-gray-300 hover:text-red-400 text-lg leading-none"
-                    >×</button>
-                  </div>
-                ))}
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {editing.transitions.map((t, i) => {
+                  // detect if this transition has a reverse pair
+                  const hasPair = editing.transitions.some(
+                    (other, j) => j !== i && other.from_state === t.to_state && other.to_state === t.from_state
+                  );
+                  return (
+                    <div key={t.id} className={`flex items-center gap-2 rounded px-2 py-1 ${hasPair ? "bg-purple-50 border border-purple-100" : "bg-gray-50 border border-gray-100"}`}>
+                      {hasPair ? (
+                        <span className="text-purple-400 text-xs font-bold w-4" title="Bidirectional pair">⇄</span>
+                      ) : (
+                        <span className="text-gray-300 text-xs font-bold w-4">→</span>
+                      )}
+                      <select
+                        value={t.from_state}
+                        onChange={(e) => setEditing((ed) => ({ ...ed, transitions: ed.transitions.map((tr, j) => j === i ? { ...tr, from_state: e.target.value } : tr) }))}
+                        className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs bg-white"
+                      >
+                        <option value="*">Any (*)</option>
+                        {editing.states.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
+                      </select>
+                      <span className="text-gray-400 text-xs">→</span>
+                      <select
+                        value={t.to_state}
+                        onChange={(e) => setEditing((ed) => ({ ...ed, transitions: ed.transitions.map((tr, j) => j === i ? { ...tr, to_state: e.target.value } : tr) }))}
+                        className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs bg-white"
+                      >
+                        {editing.states.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
+                      </select>
+                      <button
+                        onClick={() => setEditing((e) => ({ ...e, transitions: e.transitions.filter((_, j) => j !== i) }))}
+                        className="text-gray-300 hover:text-red-400 text-lg leading-none px-1"
+                      >×</button>
+                    </div>
+                  );
+                })}
+                {editing.transitions.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-3">No transitions yet. Add one-way or two-way connections above.</p>
+                )}
               </div>
             </div>
 

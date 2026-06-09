@@ -5,8 +5,15 @@
       "name": "it-helpdesk-frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "/Users/ibrahimjamal/it-helpdesk/frontend",
+      "cwd": "frontend",
       "port": 5174
+    },
+    {
+      "name": "it-helpdesk-public-portal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "public-portal",
+      "port": 5175
     }
   ]
 }

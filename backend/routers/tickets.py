@@ -32,6 +32,7 @@ def list_tickets(
     assignee_id: Optional[int] = None,
     priority: Optional[str] = None,
     q: Optional[str] = None,
+    full_name: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -55,6 +56,16 @@ def list_tickets(
             or_(
                 models.Ticket.title.ilike(f"%{q}%"),
                 models.Ticket.ticket_number.ilike(f"%{q}%"),
+            )
+        )
+    if full_name:
+        query = query.filter(
+            models.Ticket.id.in_(
+                db.query(models.TicketFieldValue.ticket_id)
+                .filter(
+                    models.TicketFieldValue.field_key == "full_name",
+                    models.TicketFieldValue.field_value.ilike(f"%{full_name}%")
+                )
             )
         )
 

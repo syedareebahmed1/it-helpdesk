@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ticketsApi } from "../../api/tickets";
 import { usersApi } from "../../api/users";
@@ -62,7 +62,9 @@ export default function AdminTicketDetail() {
   const [submitting, setSubmitting] = useState(false);
 
   const [showWorkflow, setShowWorkflow] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const statusMenuRef = useRef(null);
 
   const load = () => {
     Promise.all([
@@ -76,6 +78,16 @@ export default function AdminTicketDetail() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) {
+        setShowStatusMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleStatusChange = async (newStatus) => {
     setUpdating(true);
@@ -148,39 +160,6 @@ export default function AdminTicketDetail() {
             <p className="text-gray-400 text-xs mb-5">
               {TYPE_LABELS[ticket.ticket_type]} · Raised by <span className="text-gray-600">{ticket.reporter?.full_name}</span> on {new Date(ticket.created_at).toLocaleString()}
             </p>
-
-            {/* Status transition buttons */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 font-medium">Status:</span>
-                  <StatusBadge status={ticket.status} />
-                </div>
-                {allowedTransitions().length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Transition to →</span>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {allowedTransitions().map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleStatusChange(s)}
-                          disabled={updating}
-                          className="text-xs px-3 py-1 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <button
-                  onClick={() => setShowWorkflow(true)}
-                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-1"
-                >
-                  View Workflow
-                </button>
-              </div>
-            </div>
 
             {/* Form fields */}
             <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
@@ -285,6 +264,64 @@ export default function AdminTicketDetail() {
 
           {/* Right panel */}
           <div className="w-64 flex-shrink-0 border-l border-gray-200 bg-white px-4 py-5 space-y-5">
+
+            {/* Status dropdown */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</p>
+              <div className="relative" ref={statusMenuRef}>
+                <button
+                  onClick={() => setShowStatusMenu((v) => !v)}
+                  disabled={updating}
+                  className="w-full flex items-center gap-2 bg-[#0052cc] hover:bg-[#0747a6] text-white text-sm font-medium px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                  </svg>
+                  <span className="flex-1 text-left truncate">{ticket.status}</span>
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showStatusMenu && (
+                  <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                    {allowedTransitions().map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => { handleStatusChange(s); setShowStatusMenu(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 text-left"
+                      >
+                        <span className="text-gray-400 text-xs">Transition</span>
+                        <span className="mx-1 text-gray-300">→</span>
+                        <StatusBadge status={s} />
+                      </button>
+                    ))}
+                    {allowedTransitions().length > 0 && <hr className="my-1 border-gray-100" />}
+                    <button
+                      onClick={() => { setShowWorkflow(true); setShowStatusMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      View workflow
+                    </button>
+                    <button
+                      onClick={() => { navigate("/admin/workflows"); setShowStatusMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit Workflow
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <hr className="border-gray-100" />
+
             {/* Priority */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Priority</p>
@@ -341,7 +378,7 @@ export default function AdminTicketDetail() {
             </div>
             {allowedTransitions().length > 0 && (
               <div>
-                <p className="text-xs text-gray-500">Can move to</p>
+                <p className="text-xs text-gray-500">This request can be moved to</p>
                 <div className="flex gap-1 flex-wrap mt-1">
                   {allowedTransitions().map((s) => <StatusBadge key={s} status={s} />)}
                 </div>
@@ -349,6 +386,20 @@ export default function AdminTicketDetail() {
             )}
           </div>
           <WorkflowDiagram workflow={workflow} currentStatus={ticket.status} />
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              onClick={() => { navigate("/admin/workflows"); setShowWorkflow(false); }}
+              className="bg-[#0052cc] hover:bg-[#0747a6] text-white text-sm font-medium px-4 py-2 rounded"
+            >
+              Edit Workflow
+            </button>
+            <button
+              onClick={() => setShowWorkflow(false)}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

@@ -32,15 +32,15 @@ function NavItem({ to, icon, label, count, end = false }) {
       className={({ isActive }) =>
         `flex items-center gap-2.5 px-3 py-1.5 rounded text-sm transition-colors ${
           isActive
-            ? "bg-blue-700 text-white font-medium"
-            : "text-blue-100 hover:bg-blue-700/60 hover:text-white"
+            ? "bg-white text-black font-medium"
+            : "text-gray-300 hover:bg-white/10 hover:text-white"
         }`
       }
     >
       {icon}
       <span className="flex-1">{label}</span>
       {count !== undefined && (
-        <span className="ml-auto bg-blue-500/80 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+        <span className="ml-auto bg-white/20 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
           {count}
         </span>
       )}
@@ -65,21 +65,21 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-56 min-h-screen bg-[#0747a6] flex flex-col flex-shrink-0">
+    <aside className="w-56 min-h-screen bg-[#111111] flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-blue-700/50">
+      <div className="px-4 py-4 border-b border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-white font-bold text-lg" style={{ fontFamily: "serif" }}>بازار</span>
-          <span className="text-blue-200 text-xs leading-tight">IT Service<br />Desk</span>
+          <span className="text-gray-400 text-xs leading-tight">IT Service<br />Desk</span>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-1">
-        <p className="px-3 pt-1 pb-0.5 text-blue-300 text-xs uppercase tracking-wider font-medium">Overview</p>
+        <p className="px-3 pt-1 pb-0.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Overview</p>
         <NavItem to="/admin" end icon={ICON_DASH} label="Dashboard" />
 
-        <p className="px-3 pt-3 pb-0.5 text-blue-300 text-xs uppercase tracking-wider font-medium">Queues</p>
+        <p className="px-3 pt-3 pb-0.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Queues</p>
         <NavItem
           to="/admin/queues/service_requests"
           icon={ICON_QUEUES}
@@ -100,7 +100,7 @@ export default function Sidebar() {
         />
         <NavItem to="/admin/queues/all" icon={ICON_QUEUES} label="All Tickets" />
 
-        <p className="px-3 pt-3 pb-0.5 text-blue-300 text-xs uppercase tracking-wider font-medium">Settings</p>
+        <p className="px-3 pt-3 pb-0.5 text-gray-500 text-xs uppercase tracking-wider font-medium">Settings</p>
         <NavItem to="/admin/workflows" icon={ICON_WORKFLOW} label="Workflows" />
         {user?.role === "manager" && (
           <NavItem to="/admin/users" icon={ICON_USERS} label="Users" />
@@ -108,19 +108,19 @@ export default function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="px-3 py-3 border-t border-blue-700/50">
+      <div className="px-3 py-3 border-t border-white/10">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+          <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-semibold">
             {user?.full_name?.[0] || "U"}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-medium truncate">{user?.full_name}</p>
-            <p className="text-blue-300 text-xs truncate capitalize">{user?.role}</p>
+            <p className="text-gray-400 text-xs truncate capitalize">{user?.role}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full text-left text-blue-200 hover:text-white text-xs px-1 py-0.5 transition-colors"
+          className="w-full text-left text-gray-400 hover:text-white text-xs px-1 py-0.5 transition-colors"
         >
           Sign out
         </button>

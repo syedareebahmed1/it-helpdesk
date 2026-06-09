@@ -219,8 +219,8 @@ function Home({ onSelect }) {
 function RequestForm({ category, onBack, onSuccess }) {
   const [fields, setFields] = useState([]);
   const [values, setValues] = useState({});
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState("Syed Areeb");
+  const [email, setEmail] = useState("syed.areeb@bazaartech.com");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
