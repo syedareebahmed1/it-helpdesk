@@ -21,7 +21,7 @@ const TYPE_LABELS = {
 };
 
 const APPROVAL_TYPES = ["access_commando", "access_nucleus", "access_superset", "access_platform", "access_lending", "access_aws", "access_platform_role"];
-const APPROVAL_STATUS = "WAITING FOR APPROVAL";
+const APPROVAL_STATUS = "AWAITING APPROVAL";
 
 const FIELD_LABELS = {
   full_name: "Full Name", preferred_email: "Preferred Email ID", personal_email: "Personal Email ID",
