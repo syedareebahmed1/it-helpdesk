@@ -1,22 +1,20 @@
-const PRIORITY_STYLES = {
-  P1: "bg-red-500 text-white",
-  P2: "bg-orange-400 text-white",
-  P3: "bg-yellow-400 text-gray-900",
-  P4: "bg-gray-300 text-gray-700",
-};
-
-const PRIORITY_LABELS = {
-  P1: "P1 Critical",
-  P2: "P2 High",
-  P3: "P3 Medium",
-  P4: "P4 Low",
+const PRIORITY_CONFIG = {
+  P1: { label: "Critical", icon: "▲▲", color: "#de350b", bg: "#ffebe6" },
+  P2: { label: "High",     icon: "▲",  color: "#ff5630", bg: "#ffebe6" },
+  P3: { label: "Medium",   icon: "●",  color: "#ff8b00", bg: "#fffae6" },
+  P4: { label: "Low",      icon: "▼",  color: "#36b37e", bg: "#e3fcef" },
 };
 
 export default function PriorityBadge({ priority, showLabel = false, className = "" }) {
-  const style = PRIORITY_STYLES[priority] || PRIORITY_STYLES.P3;
+  const cfg = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.P3;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${style} ${className}`}>
-      {showLabel ? PRIORITY_LABELS[priority] || priority : priority}
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-bold px-1.5 py-0.5 rounded ${className}`}
+      style={{ color: cfg.color, backgroundColor: cfg.bg }}
+      title={`${priority} – ${cfg.label}`}
+    >
+      <span className="text-[10px]">{cfg.icon}</span>
+      {showLabel ? `${priority} ${cfg.label}` : priority}
     </span>
   );
 }

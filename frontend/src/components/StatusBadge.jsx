@@ -1,22 +1,33 @@
 const STATUS_STYLES = {
-  "WAITING FOR SUPPORT": "bg-blue-100 text-blue-700 border-blue-200",
-  "ACKNOWLEDGE": "bg-blue-200 text-blue-800 border-blue-300",
-  "IN PROGRESS": "bg-blue-600 text-white border-blue-600",
-  "CREATE CREDENTIALS": "bg-indigo-100 text-indigo-700 border-indigo-200",
-  "RESOLVED": "bg-green-100 text-green-700 border-green-200",
-  "NOT APPROVED": "bg-red-100 text-red-700 border-red-200",
-  "REJECTED": "bg-red-100 text-red-700 border-red-200",
-  "HOLD": "bg-orange-100 text-orange-700 border-orange-200",
-  "AWAITING APPROVAL": "bg-slate-100 text-slate-600 border-slate-200",
-  "OPEN": "bg-sky-100 text-sky-700 border-sky-200",
+  "WAITING FOR SUPPORT":  { bg: "#deebff", text: "#0747a6", dot: "#0052cc" },
+  "AWAITING APPROVAL":    { bg: "#fff0b3", text: "#172b4d", dot: "#f59e0b" },
+  "WAITING FOR APPROVAL": { bg: "#fff0b3", text: "#172b4d", dot: "#f59e0b" },
+  "ACKNOWLEDGE":          { bg: "#e3fcef", text: "#006644", dot: "#00875a" },
+  "IN PROGRESS":          { bg: "#e9f2ff", text: "#0052cc", dot: "#0052cc" },
+  "WORK IN PROGRESS":     { bg: "#e9f2ff", text: "#0052cc", dot: "#0052cc" },
+  "HOLD":                 { bg: "#fffae6", text: "#974f0c", dot: "#ff8b00" },
+  "PENDING":              { bg: "#fffae6", text: "#974f0c", dot: "#ff8b00" },
+  "PENDING VENDOR":       { bg: "#fffae6", text: "#974f0c", dot: "#ff8b00" },
+  "RESOLVED":             { bg: "#e3fcef", text: "#006644", dot: "#00875a" },
+  "COMPLETED":            { bg: "#e3fcef", text: "#006644", dot: "#00875a" },
+  "CLOSED":               { bg: "#f1f2f4", text: "#44546f", dot: "#8590a2" },
+  "CANCELED":             { bg: "#f1f2f4", text: "#44546f", dot: "#8590a2" },
+  "REJECTED":             { bg: "#ffebe6", text: "#bf2600", dot: "#de350b" },
+  "NOT APPROVED":         { bg: "#ffebe6", text: "#bf2600", dot: "#de350b" },
+  "OPEN":                 { bg: "#e9f2ff", text: "#0052cc", dot: "#0052cc" },
+  "CREATE CREDENTIALS":   { bg: "#eae6ff", text: "#403294", dot: "#5243aa" },
+  "CLOSE CREDENTIALS":    { bg: "#eae6ff", text: "#403294", dot: "#5243aa" },
+  "WAITING FOR LAPTOP":   { bg: "#e6fcff", text: "#008da6", dot: "#00b8d9" },
 };
 
 export default function StatusBadge({ status, className = "" }) {
-  const style = STATUS_STYLES[status] || "bg-gray-100 text-gray-600 border-gray-200";
+  const style = STATUS_STYLES[status] || { bg: "#f1f2f4", text: "#44546f", dot: "#8590a2" };
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${style} ${className}`}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${className}`}
+      style={{ backgroundColor: style.bg, color: style.text }}
     >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: style.dot }} />
       {status}
     </span>
   );
