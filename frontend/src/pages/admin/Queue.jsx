@@ -15,6 +15,7 @@ const TYPE_LABELS = {
   access_platform: "Platform Scopes", access_lending: "Lending Portal",
   access_aws: "AWS Access", access_platform_role: "Platform Role",
   system_problem: "System Problem", it_service_request: "IT Service Request",
+  bz_internal_transfer: "BZ Internal Transfer",
 };
 
 const ALL_STATUSES = [
@@ -26,7 +27,7 @@ const ALL_STATUSES = [
 
 const QUEUE_CONFIG = {
   unassigned:      { label: "Unassigned Tickets",  types: null, statuses: ALL_STATUSES, filterAssignee: "none" },
-  service_requests:{ label: "Service Requests",    types: ["access_google","access_commando","access_nucleus","access_superset","access_platform","access_lending","access_aws","access_platform_role","system_problem","it_service_request"], statuses: ["WAITING FOR APPROVAL","WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","RESOLVED","REJECTED","CANCELED"] },
+  service_requests:{ label: "Service Requests",    types: ["access_google","access_commando","access_nucleus","access_superset","access_platform","access_lending","access_aws","access_platform_role","system_problem","it_service_request","bz_internal_transfer"], statuses: ["WAITING FOR APPROVAL","WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","RESOLVED","REJECTED","CANCELED"] },
   incidents:       { label: "Incidents",           types: ["incident"], statuses: ["OPEN","WORK IN PROGRESS","PENDING","COMPLETED","CANCELED","CLOSED"] },
   hardware:        { label: "Hardware Requests",   types: ["hardware_request"], statuses: ["WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","PENDING VENDOR","RESOLVED","CANCELED"] },
   onboarding:      { label: "Onboarding",          types: ["onboarding"], statuses: ["WAITING FOR SUPPORT","ACKNOWLEDGE","IN PROGRESS","HOLD","CREATE CREDENTIALS","RESOLVED","CANCELED"] },

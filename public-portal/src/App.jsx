@@ -126,8 +126,8 @@ const PORTAL_REQUESTS = {
       icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/></svg>,
     },
     {
-      type: "it_service_request", label: "BZ Internal Transfer",
-      description: "Request an internal transfer for a Bazaar employee.",
+      type: "bz_internal_transfer", label: "BZ Internal Transfer",
+      description: "Request an internal transfer, redesignation, or relocation for a Bazaar colleague.",
       icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>,
     },
     {
@@ -385,6 +385,26 @@ function FieldInput({ field, value, onChange }) {
         {field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
+
+  if (field.type === "radio") {
+    return (
+      <div className="space-y-2">
+        {field.options?.map((opt) => (
+          <label key={opt} className="flex items-center gap-3 cursor-pointer group">
+            <div
+              onClick={() => onChange(opt)}
+              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer ${
+                value === opt ? "border-[#0052cc]" : "border-[#8590a2] group-hover:border-[#0052cc]"
+              }`}
+            >
+              {value === opt && <div className="w-2 h-2 rounded-full bg-[#0052cc]" />}
+            </div>
+            <span className="text-[14px] text-[#172b4d]">{opt}</span>
+          </label>
+        ))}
+      </div>
+    );
+  }
 
   if (field.type === "multiselect") {
     const selected = value ? value.split(",").filter(Boolean) : [];

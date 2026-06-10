@@ -13,6 +13,7 @@ TICKET_TYPES = {
     "access_platform_role": "Create New Platform Role",
     "system_problem": "Report a System Problem",
     "it_service_request": "IT Service Request",
+    "bz_internal_transfer": "BZ Internal Transfer",
 }
 
 TICKET_FORM_FIELDS = {
@@ -161,6 +162,36 @@ TICKET_FORM_FIELDS = {
          "options": ["New Setup", "Configuration Change", "Software Install", "Other"], "required": True},
         {"key": "description", "label": "Description", "type": "textarea", "required": True},
         {"key": "comments", "label": "Comments", "type": "textarea", "required": False},
+    ],
+    "bz_internal_transfer": [
+        {"key": "raise_on_behalf_of", "label": "Raise this request on behalf of", "type": "text", "required": True},
+        {"key": "employment_type", "label": "Employment Type", "type": "select",
+         "options": ["Permanent", "Contractual", "Intern"], "required": True},
+        {"key": "colleague_full_name", "label": "Colleague Full Name", "type": "text", "required": True},
+        {"key": "colleague_id", "label": "Colleague ID", "type": "text", "required": True},
+        {"key": "colleague_email", "label": "Colleague Email ID", "type": "email", "required": True},
+        {"key": "type_of_movement", "label": "Type of Movement", "type": "multiselect",
+         "options": [
+             "Short term relocation",
+             "Cross function role change",
+             "Redesignation",
+             "Other (Please define in description)",
+             "Long Term Transfer",
+         ], "required": True},
+
+        {"key": "description", "label": "Description", "type": "textarea", "required": False},
+        {"key": "effective_date", "label": "Effective Date", "type": "date", "required": True},
+        {"key": "new_job_title", "label": "New Job Title", "type": "text", "required": True},
+        {"key": "new_function", "label": "New Function", "type": "text", "required": True},
+        {"key": "new_location", "label": "New Location", "type": "select",
+         "options": [
+             "Karachi - Head Office", "Karachi - Hub", "Lahore - Head Office", "Lahore - Hub",
+             "Islamabad", "Faisalabad", "Multan", "Peshawar", "Quetta", "Other",
+         ], "required": True},
+        {"key": "new_line_manager_email", "label": "New Line Manager (Email)", "type": "email", "required": True},
+        {"key": "change_in_benefit", "label": "Change in Benefit", "type": "text", "required": False},
+        {"key": "reason_for_hire", "label": "Reason for Hire", "type": "radio",
+         "options": ["New Position", "Replacement", "Internal Movement"], "required": True},
     ],
     "access_aws": [
         {"key": "requested_for", "label": "Requested For (Name/Email)", "type": "text", "required": True},
@@ -355,6 +386,7 @@ def get_workflow_key(ticket_type: str) -> str:
         "incident": "incident",
         "hardware_request": "hardware_request",
         "it_service_request": "it_service_request",
+        "bz_internal_transfer": "it_service_request",
         "access_commando": "service_request_approval",
         "access_lending": "service_request_approval",
         "access_nucleus": "service_request_approval",

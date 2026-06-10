@@ -17,6 +17,7 @@ const TYPE_LABELS = {
   access_nucleus: "Nucleus Access Request", access_superset: "SuperSet Access Request",
   access_platform: "Platform Scopes", access_lending: "Lending Portal",
   system_problem: "System Problem", it_service_request: "IT Service Request",
+  bz_internal_transfer: "BZ Internal Transfer",
   access_aws: "AWS Access", access_platform_role: "Create New Platform Role",
 };
 
@@ -33,6 +34,12 @@ const FIELD_LABELS = {
   request_type: "Request Type", access_type: "Access Type", justification: "Justification",
   scope_action: "Action", scope_name: "Scope / Permission", platform: "Platform",
   lending_module: "Lending Module", affected_system: "Affected System",
+  raise_on_behalf_of: "Raise on Behalf Of", colleague_full_name: "Colleague Full Name",
+  colleague_id: "Colleague ID", colleague_email: "Colleague Email",
+  type_of_movement: "Type of Movement", effective_date: "Effective Date",
+  new_job_title: "New Job Title", new_function: "New Function",
+  new_location: "New Location", new_line_manager_email: "New Line Manager (Email)",
+  change_in_benefit: "Change in Benefit", reason_for_hire: "Reason for Hire",
   problem_description: "Problem Description", steps_to_reproduce: "Steps to Reproduce",
   impact_level: "Impact Level", application_requested: "Application Requested",
 };
