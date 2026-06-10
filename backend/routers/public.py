@@ -17,8 +17,16 @@ class PublicTicketCreate(BaseModel):
 
 
 def _next_ticket_number(db: Session) -> str:
-    count = db.query(models.Ticket).count()
-    return f"IT-{(count + 1):05d}"
+    from sqlalchemy import func
+    last = db.query(func.max(models.Ticket.ticket_number)).scalar()
+    if last:
+        try:
+            num = int(last.split("-")[1]) + 1
+        except Exception:
+            num = db.query(models.Ticket).count() + 1
+    else:
+        num = 1
+    return f"IT-{num:05d}"
 
 
 def _get_or_create_guest(db: Session, name: str, email: str) -> models.User:
