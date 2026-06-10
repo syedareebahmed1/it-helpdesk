@@ -371,3 +371,143 @@ def get_initial_status(ticket_type: str) -> str:
         if state["is_initial"]:
             return state["name"]
     return "WAITING FOR SUPPORT"
+
+
+# ──────────────────────────────────────────────────────────────
+# Auto-approver routing rules (mirrors the Jira JMWE post-function)
+# Maps nucleus_module / commando_role values → approver name(s)
+# ──────────────────────────────────────────────────────────────
+NUCLEUS_APPROVERS = {
+    # Fleet / Routing
+    "Fleet Manager": ["Dayen Khan"],
+    "Fleet Supervisor": ["Dayen Khan"],
+    "Fleet Executive": ["Dayen Khan"],
+    "Route Viewer - Routing Executive": ["Dayen Khan"],
+    "Route Planner - Routing Supervisor": ["Dayen Khan"],
+    "Route Viewer": ["Dayen Khan"],
+    "Route Planner": ["Dayen Khan"],
+    "Control Tower": ["Dayen Khan"],
+    # Order
+    "General Order Creator": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Order All Access": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Chief Justice - Order": ["Fahad Subzwari", "Ibrahim Jamal"],
+    "Nucleus Order View": ["Toqeer Rehman"],
+    "Order Discount Editor": ["Toqeer Rehman"],
+    "Discount Approval Manager": ["Toqeer Rehman"],
+    "Discount Order Creator": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Order Manager": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Order (Category Manager - Industrial)": ["Zaka", "Ozair"],
+    "Ticket Resolver": ["Fahad Subzwari"],
+    # Ops / WMS
+    "WMS COMMERCIALS": ["Ozair"],
+    "WMS Finance": ["Umer Siddiqui"],
+    "WMS Packer": ["Dayen Khan", "Kamran Khalil"],
+    "WMS OPS": ["Dayen Khan", "Kamran Khalil"],
+    "WMS OPS Supervisor": ["Dayen Khan", "Kamran Khalil"],
+    "WMS Super User": ["Dayen Khan", "Kamran Khalil"],
+    "OLP Packer": ["Dayen Khan", "Kamran Khalil"],
+    "Dropship Fulfilment - Ops": ["Umer Siddiqui"],
+    "Cycle Count View Only": ["Dayen Khan"],
+    "Cycle Count View": ["Dayen Khan"],
+    "Cycle Count Initiation": ["Dayen Khan"],
+    "Cycle Count Master Role": ["Dayen Khan"],
+    # Catalog
+    "CATALOG_MASTER": ["Ozair"],
+    "CATALOG_VIEWER": ["Ozair"],
+    "CATALOG_OPS": ["Ozair"],
+    "CATALOG_FINANCE": ["Ozair", "Dayen Khan"],
+    "CATALOG_COMMERCIAL": ["Ozair"],
+    "CATALOG_COMMERCIAL_SUPERVISOR": ["Ozair"],
+    "Catalog All Access": ["Ozair"],
+    "Catalog View And Create Product": ["Ozair"],
+    "Catalog Pricing": ["Ozair"],
+    "catalog pricing": ["Ozair"],
+    "Catalog Pricing Supervisor": ["Ozair"],
+    "catalog pricing supervisor": ["Ozair"],
+    "Catalog Pricing Viewer": ["Ozair"],
+    "catalog pricing viewer": ["Ozair"],
+    "Catalog Other Details": ["Ozair"],
+    "Vendor View": ["Ozair"],
+    "Vendor Create": ["Ozair"],
+    "Contract Create": ["Ozair"],
+    "Bundle Create": ["Ozair"],
+    "Promo Manager": ["Ozair"],
+    "Promo View": ["Ozair"],
+    "Promo Create": ["Ozair"],
+    "CAMPAIGN_MASTER": ["Ozair"],
+    "Demand Quotation": ["Ozair"],
+    "PO COMMERCIALS": ["Ozair"],
+    "PO_COMMERCIALS_SUPERVISOR": ["Ozair"],
+    "PO FINANCE": ["Ozair"],
+    "PO_FINANCE_SUPERVISOR": ["Ozair"],
+    "Commercials Manager": ["Ozair"],
+    "Commercials Brand Manager": ["Ozair"],
+    "Commercial Super User": ["Ozair"],
+    # Customer
+    "Customer Module - View": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Customer Module - Update": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Customer All Access": ["Fahad Subzwari", "Toqeer Rehman"],
+    "Retail - Customer Update": ["Fahad Subzwari", "Toqeer Rehman"],
+    # LiveOps / Agent
+    "LiveOps Care": ["Ozair"],
+    "LiveOps Executive": ["Ozair"],
+    "Nucleus Liveops Executive": ["Ozair", "Fahad Subzwari"],
+    "Agent Team Lead": ["Ozair"],
+    "Sales Return": ["Dayen Khan"],
+    "Sales Return Approver": ["Dayen Khan"],
+    "IRD Executive": ["Dayen Khan", "Kamran Khalil"],
+    "IRM": ["Dayen Khan", "Kamran Khalil"],
+    # Cash Tower
+    "Cash Tower Cash Officer": ["Dayen Khan"],
+    "Cash Tower Cash Supervisor": ["Dayen Khan"],
+    "Cash Tower - Collection Supervisor": ["Dayen Khan"],
+    # Lending
+    "Lending Collection Core": ["Ozair"],
+    "Lending Army Chief": ["Ozair"],
+    "Lending Biz Core": ["Ozair"],
+    # Rider / BA / BR
+    "BR Executive": ["Dayen Khan"],
+    "BA Executive": ["Dayen Khan"],
+    # Prime / WMS Admin
+    "Prime Admin": ["Umer Siddiqui"],
+    "PRIME_KPO": ["Umer Siddiqui"],
+    "Ghalib Admin": ["Usman"],
+    # Default fallback
+    "_default": ["Dayen Khan"],
+}
+
+COMMANDO_APPROVERS = {
+    "Telesales": ["Afnan Anwar Khan"],
+    "Sales Return": ["Fahad Subzwari", "Toqeer Rehman", "Dayen Khan"],
+    "Ops Supervisor": ["Dayen Khan", "Kamran Khalil"],
+    "Finance": ["Dayen Khan", "Kamran Khalil"],
+    "Ops": ["Dayen Khan", "Kamran Khalil"],
+    "Growth King": ["Fahad Subzwari", "Toqeer Rehman", "Ozair"],
+    "Gro-mance": ["Fahad Subzwari", "Toqeer Rehman", "Ozair"],
+    "Marketplace Manager": ["Maria Gulzar"],
+    "Commercials": ["Uzair Akhtar"],
+    "Commerical Supervisor": ["Uzair Akhtar"],
+    "Brand Manager": ["Ayaz Arshad"],
+    "Care Supervisor": ["Toqeer Rehman", "Fahad Subzwari"],
+    "Care Manager": ["Toqeer Rehman", "Fahad Subzwari"],
+    "Care Agent": ["Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 1": ["Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 2": ["Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 3": ["Toqeer Rehman", "Fahad Subzwari"],
+    "Commando God": ["Dayen Khan"],
+    "Rider Manager": ["Dayen Khan"],
+    "Commercial": ["Ozair"],
+    "Caps Upload": ["Rehman", "Kamran Khalil"],
+    "_default": ["Dayen Khan"],
+}
+
+
+def get_approvers_for_ticket(ticket_type: str, field_values: dict) -> list:
+    """Return list of approver names for a given ticket based on field values."""
+    if ticket_type == "access_nucleus":
+        module = field_values.get("nucleus_module", "")
+        return NUCLEUS_APPROVERS.get(module, NUCLEUS_APPROVERS["_default"])
+    if ticket_type == "access_commando":
+        role = field_values.get("access_type", "")
+        return COMMANDO_APPROVERS.get(role, COMMANDO_APPROVERS["_default"])
+    return []

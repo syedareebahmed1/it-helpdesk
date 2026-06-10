@@ -326,50 +326,56 @@ export default function AdminTicketDetail() {
             </div>
 
             {/* Approval panel — shown when ticket is waiting for approval */}
-            {ticket.status === APPROVAL_STATUS && (
-              <>
-                <hr className="border-gray-100" />
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approvals</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
-                    <p className="text-xs text-gray-600 font-medium mb-1">This request requires your approval</p>
-                    <p className="text-xs text-gray-400">1 person from 'Approvers' must approve.</p>
-                  </div>
-                  <div className="flex gap-2 mb-3">
-                    <button
-                      onClick={() => handleStatusChange("WAITING FOR SUPPORT")}
-                      disabled={updating}
-                      className="flex-1 bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-xs font-semibold px-3 py-2 rounded transition-colors disabled:opacity-50"
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange("REJECTED")}
-                      disabled={updating}
-                      className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded transition-colors disabled:opacity-50"
-                    >
-                      Decline
-                    </button>
-                  </div>
+            {ticket.status === APPROVAL_STATUS && (() => {
+              const approverField = ticket.field_values?.find(f => f.field_key === "_approvers");
+              const approverNames = approverField
+                ? approverField.field_value.split(", ").filter(Boolean)
+                : ["Dayen Khan"];
+              return (
+                <>
+                  <hr className="border-gray-100" />
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">Approvers</p>
-                    <div className="space-y-2">
-                      {agents.slice(0, 2).map((a) => (
-                        <div key={a.id} className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold flex-shrink-0">
-                            {a.full_name[0]}
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approvals</p>
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
+                      <p className="text-xs text-gray-700 font-medium mb-1">This request requires your approval</p>
+                      <p className="text-xs text-gray-500">{approverNames.length} person{approverNames.length > 1 ? "s" : ""} from 'Approvers' must approve.</p>
+                    </div>
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        onClick={() => handleStatusChange("WAITING FOR SUPPORT")}
+                        disabled={updating}
+                        className="flex-1 bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-xs font-semibold px-3 py-2 rounded transition-colors disabled:opacity-50"
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange("REJECTED")}
+                        disabled={updating}
+                        className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded transition-colors disabled:opacity-50"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium mb-2">Approvers</p>
+                      <div className="space-y-2">
+                        {approverNames.map((name) => (
+                          <div key={name} className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold flex-shrink-0">
+                              {name[0]}
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-gray-800">{name}</p>
+                              <p className="text-xs text-gray-400">Waiting for approval</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-700">{a.full_name}</p>
-                            <p className="text-xs text-gray-400">Waiting for approval</p>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              );
+            })()}
 
             <hr className="border-gray-100" />
 

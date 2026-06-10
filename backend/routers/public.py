@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from database import get_db
 import models, auth as auth_utils
-from constants import TICKET_TYPES, TICKET_FORM_FIELDS, get_initial_status
+from constants import TICKET_TYPES, TICKET_FORM_FIELDS, get_initial_status, get_approvers_for_ticket
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
@@ -96,6 +96,15 @@ def create_public_ticket(body: PublicTicketCreate, db: Session = Depends(get_db)
                 field_key=fv["field_key"],
                 field_value=fv["field_value"],
             ))
+
+    # Auto-assign approvers based on routing rules
+    approvers = get_approvers_for_ticket(body.ticket_type, fv_map)
+    if approvers:
+        db.add(models.TicketFieldValue(
+            ticket_id=ticket.id,
+            field_key="_approvers",
+            field_value=", ".join(approvers),
+        ))
 
     db.add(models.TicketHistory(
         ticket_id=ticket.id,
