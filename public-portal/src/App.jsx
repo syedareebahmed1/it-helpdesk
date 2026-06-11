@@ -735,6 +735,321 @@ function Success({ ticket, onReset, onViewTicket }) {
   );
 }
 
+/* ─── CPH My Tickets Portal ──────────────────────────────────────────────── */
+function CphPortal({ auth, onBack, onRaiseNew }) {
+  const [view,       setView]       = useState("list"); // list | detail
+  const [tickets,    setTickets]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [activeNum,  setActiveNum]  = useState(null);
+  const [detail,     setDetail]     = useState(null);
+  const [detailLoad, setDetailLoad] = useState(false);
+  const [error,      setError]      = useState("");
+
+  // Status badge helper (inline so no dep on STATUS_COLORS defined later)
+  const statusPill = (s) => {
+    const map = {
+      "WAITING FOR SUPPORT": "bg-[#e9f2ff] text-[#0052cc]",
+      "IN PROGRESS":         "bg-[#e9f2ff] text-[#0052cc]",
+      "AWAITING APPROVAL":   "bg-[#fff0b3] text-[#974f0c]",
+      "RESOLVED":            "bg-[#e3fcef] text-[#006644]",
+      "CLOSED":              "bg-[#f1f2f4] text-[#44546f]",
+      "REJECTED":            "bg-[#ffebe6] text-[#bf2600]",
+      "ON HOLD":             "bg-[#fff3cd] text-[#c2410c]",
+    };
+    return map[s] || "bg-[#f1f2f4] text-[#44546f]";
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${API}/api/people-portal/my-tickets?email=${encodeURIComponent(auth.email)}`)
+      .then((r) => r.json())
+      .then(setTickets)
+      .catch(() => setError("Failed to load tickets"))
+      .finally(() => setLoading(false));
+  }, [auth.email]);
+
+  const openDetail = (num) => {
+    setActiveNum(num); setDetailLoad(true); setView("detail");
+    fetch(`${API}/api/people-portal/tickets/${num}?email=${encodeURIComponent(auth.email)}`)
+      .then((r) => { if (!r.ok) throw new Error("Not found"); return r.json(); })
+      .then(setDetail)
+      .catch(() => setDetail(null))
+      .finally(() => setDetailLoad(false));
+  };
+
+  const TYPE_LABELS_LOCAL = {
+    onboarding: "Colleague Onboarding", offboarding: "Colleague Offboarding",
+    bz_internal_transfer: "BZ Internal Transfer", system_problem: "System Problem",
+    access_nucleus: "Nucleus Access", access_commando: "Commando Access",
+    access_lending: "Lending Access", access_superset: "SuperSet Access",
+    service_request: "General IT Request",
+  };
+
+  /* ── Detail view ── */
+  if (view === "detail") {
+    return (
+      <div className="min-h-screen bg-[#f7f8f9]">
+        <TopNav onHome={onBack} />
+        <HeroBanner>
+          <div className="px-6 py-6 max-w-3xl mx-auto">
+            <p className="text-[13px] text-white/60">
+              <button onClick={onBack} className="hover:text-white">Help Center</button>
+              <span className="mx-2">/</span>
+              <button onClick={() => setView("list")} className="hover:text-white">My Requests</button>
+              <span className="mx-2">/</span>
+              <span className="text-white/90">{activeNum}</span>
+            </p>
+            <h1 className="text-[20px] font-bold text-white mt-2">
+              {detailLoad ? "Loading…" : detail?.title || activeNum}
+            </h1>
+          </div>
+        </HeroBanner>
+
+        <div className="max-w-3xl mx-auto px-6 py-8">
+          {detailLoad && (
+            <div className="flex items-center gap-3 text-[#6b778c] py-10 justify-center">
+              <div className="w-5 h-5 border-2 border-[#0052cc] border-t-transparent rounded-full animate-spin" />
+              <span>Loading ticket…</span>
+            </div>
+          )}
+
+          {!detailLoad && detail && (
+            <div className="grid grid-cols-3 gap-5">
+              {/* ── Left: main content ── */}
+              <div className="col-span-2 space-y-4">
+                {/* Linked IT task banner */}
+                {detail.linked_ticket && (
+                  <div className="flex items-center gap-3 bg-[#e9f2ff] border border-[#b3d4ff] rounded-lg px-4 py-3">
+                    <svg className="w-4 h-4 text-[#0052cc] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                    <div className="flex-1 text-[13px]">
+                      <span className="text-[#0052cc] font-semibold">🖥️ IT Task: </span>
+                      <span className="font-bold text-[#172b4d]">{detail.linked_ticket.ticket_number}</span>
+                      <span className="text-[#44546f]"> — {detail.linked_ticket.title}</span>
+                    </div>
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusPill(detail.linked_ticket.status)}`}>
+                      {detail.linked_ticket.status}
+                    </span>
+                  </div>
+                )}
+
+                {/* Form fields */}
+                {Object.keys(detail.field_values).length > 0 && (
+                  <div className="bg-white border border-[#dfe1e6] rounded-lg overflow-hidden shadow-sm">
+                    <div className="px-5 py-3 bg-[#f7f8f9] border-b border-[#dfe1e6]">
+                      <p className="text-[12px] font-semibold text-[#6b778c] uppercase tracking-wide">Request Details</p>
+                    </div>
+                    <div className="divide-y divide-[#dfe1e6]">
+                      {Object.entries(detail.field_values).map(([k, v]) => (
+                        <div key={k} className="px-5 py-3 flex gap-4">
+                          <span className="text-[12px] text-[#6b778c] w-44 flex-shrink-0 capitalize">{k.replace(/_/g," ")}</span>
+                          <span className="text-[13px] text-[#172b4d] font-medium">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Activity / comments */}
+                <div className="bg-white border border-[#dfe1e6] rounded-lg overflow-hidden shadow-sm">
+                  <div className="px-5 py-3 bg-[#f7f8f9] border-b border-[#dfe1e6]">
+                    <p className="text-[12px] font-semibold text-[#6b778c] uppercase tracking-wide">Activity</p>
+                  </div>
+                  <div className="px-5 py-4 space-y-4">
+                    {/* History entries */}
+                    {detail.history.map((h, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#dfe1e6] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-[#6b778c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[13px] text-[#44546f]">
+                            <span className="capitalize font-medium">{h.field}</span> changed
+                            {h.from && <> from <span className="font-semibold text-[#172b4d]">{h.from}</span></>}
+                            {h.to && <> to <span className="font-semibold text-[#172b4d]">{h.to}</span></>}
+                          </p>
+                          <p className="text-[11px] text-[#8590a2] mt-0.5">
+                            {new Date(h.at).toLocaleString("en-GB", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Public comments */}
+                    {detail.comments.map((c) => (
+                      <div key={c.id} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#0052cc] flex items-center justify-center flex-shrink-0 mt-0.5 text-white text-[10px] font-bold">
+                          {c.author.charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="bg-[#f7f8f9] border border-[#dfe1e6] rounded-lg px-4 py-3">
+                            <p className="text-[12px] font-semibold text-[#172b4d] mb-1">{c.author}</p>
+                            <p className="text-[13px] text-[#44546f]">{c.body}</p>
+                          </div>
+                          <p className="text-[11px] text-[#8590a2] mt-1">
+                            {new Date(c.created_at).toLocaleString("en-GB", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {detail.comments.length === 0 && detail.history.length === 0 && (
+                      <p className="text-[13px] text-[#8590a2] py-2">No activity yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Right: status panel ── */}
+              <div className="space-y-3">
+                <div className="bg-white border border-[#dfe1e6] rounded-lg p-4 shadow-sm">
+                  <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-3">Status</p>
+                  <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full ${statusPill(detail.status)}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                    {detail.status}
+                  </span>
+                </div>
+                <div className="bg-white border border-[#dfe1e6] rounded-lg p-4 shadow-sm">
+                  <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-2">Type</p>
+                  <p className="text-[13px] text-[#172b4d] font-medium">{TYPE_LABELS_LOCAL[detail.ticket_type] || detail.ticket_type}</p>
+                </div>
+                <div className="bg-white border border-[#dfe1e6] rounded-lg p-4 shadow-sm">
+                  <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-2">Assigned to</p>
+                  <p className="text-[13px] text-[#172b4d] font-medium">{detail.assignee || "Unassigned"}</p>
+                </div>
+                <div className="bg-white border border-[#dfe1e6] rounded-lg p-4 shadow-sm">
+                  <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-2">Raised on</p>
+                  <p className="text-[13px] text-[#172b4d] font-medium">
+                    {new Date(detail.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── List view ── */
+  return (
+    <div className="min-h-screen bg-[#f7f8f9]">
+      <TopNav onHome={onBack} />
+
+      {/* Hero banner */}
+      <div className="bg-[#1a1f2e] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{backgroundImage:"radial-gradient(circle, #fff 1px, transparent 1px)",backgroundSize:"24px 24px"}} />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 py-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0052cc] flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[22px] font-bold text-white">People Helpdesk — My Requests</h1>
+              <p className="text-[13px] text-white/60 mt-0.5">Logged in as <span className="text-white/90 font-medium">{auth.name}</span> · {auth.email}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Action bar */}
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-[14px] text-[#44546f]">
+            {loading ? "Loading…" : `${tickets.length} request${tickets.length !== 1 ? "s" : ""}`}
+          </p>
+          <button
+            onClick={onRaiseNew}
+            className="flex items-center gap-2 text-[13px] font-semibold text-white bg-[#0052cc] hover:bg-[#0747a6] px-4 py-2 rounded-md transition-colors shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+            </svg>
+            Raise New Request
+          </button>
+        </div>
+
+        {error && <div className="bg-[#ffebe6] border border-[#ff8f73] text-[#bf2600] text-[13px] rounded-lg px-4 py-3 mb-4">{error}</div>}
+
+        {loading && (
+          <div className="flex items-center gap-3 text-[#6b778c] py-16 justify-center">
+            <div className="w-5 h-5 border-2 border-[#0052cc] border-t-transparent rounded-full animate-spin" />
+            <span>Loading your requests…</span>
+          </div>
+        )}
+
+        {!loading && tickets.length === 0 && (
+          <div className="text-center py-20">
+            <div className="w-14 h-14 bg-[#f1f2f4] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-[#8590a2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <p className="text-[15px] font-semibold text-[#172b4d]">No requests yet</p>
+            <p className="text-[13px] text-[#6b778c] mt-1">Requests you raise will appear here.</p>
+          </div>
+        )}
+
+        {!loading && tickets.length > 0 && (
+          <div className="bg-white border border-[#dfe1e6] rounded-lg overflow-hidden shadow-sm">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="bg-[#f7f8f9] border-b border-[#dfe1e6]">
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide">Ticket</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide">Request</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide">IT Task</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide">Raised</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#dfe1e6]">
+                {tickets.map((t) => (
+                  <tr key={t.id} onClick={() => openDetail(t.ticket_number)}
+                    className="hover:bg-[#f7f8f9] cursor-pointer transition-colors">
+                    <td className="px-4 py-3">
+                      <span className="font-bold text-[#0052cc]">{t.ticket_number}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-[#172b4d] truncate max-w-[240px]">{t.title}</p>
+                      <p className="text-[11px] text-[#8590a2] mt-0.5">{TYPE_LABELS_LOCAL[t.ticket_type] || t.ticket_type}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${statusPill(t.status)}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {t.linked_ticket ? (
+                        <div>
+                          <p className="font-medium text-[#44546f]">{t.linked_ticket.ticket_number}</p>
+                          <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded mt-0.5 ${statusPill(t.linked_ticket.status)}`}>
+                            {t.linked_ticket.status}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[#8590a2]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[#6b778c]">
+                      {new Date(t.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Ticket Tracker ─────────────────────────────────────────────────────── */
 const STATUS_COLORS = {
   "WAITING FOR SUPPORT": { dot: "bg-[#0052cc]", text: "text-[#0052cc]" },
@@ -889,7 +1204,7 @@ function TicketTracker({ ticketNumber, onBack, onViewLinked }) {
 
 /* ─── App root ───────────────────────────────────────────────────────────── */
 export default function App() {
-  const [screen,       setScreen]       = useState("help_center"); // help_center | people_login | portal | form | success | track
+  const [screen,       setScreen]       = useState("help_center"); // help_center | people_login | cph_portal | cph_raise | form | success | track
   const [portal,       setPortal]       = useState(null);
   const [request,      setRequest]      = useState(null);
   const [ticket,       setTicket]       = useState(null);
@@ -900,7 +1215,7 @@ export default function App() {
 
   const handleBack = (to) => {
     if (to === "home")         { reset(); }
-    if (to === "portal")       { setScreen("portal"); setRequest(null); }
+    if (to === "portal")       { setScreen(portal?.id === "people" ? "cph_portal" : "portal"); setRequest(null); }
     if (to === "people_login") { setScreen("people_login"); setRequest(null); }
   };
 
@@ -912,9 +1227,15 @@ export default function App() {
 
   // ── 1. Success screen ──────────────────────────────────────────────────────
   if (screen === "success" && ticket)
-    return <Success ticket={ticket} onReset={reset} onViewTicket={openTracker} />;
+    return (
+      <Success
+        ticket={ticket}
+        onReset={peopleAuth ? () => setScreen("cph_portal") : reset}
+        onViewTicket={openTracker}
+      />
+    );
 
-  // ── 2. Request form ────────────────────────────────────────────────────────
+  // ── 2. Request form (from CPH portal "Raise New Request") ─────────────────
   if (screen === "form" && portal && request)
     return (
       <RequestForm
@@ -927,16 +1248,23 @@ export default function App() {
       />
     );
 
-  // ── 3. Portal home (request type list) ────────────────────────────────────
-  if (screen === "portal" && portal)
+  // ── 3a. CPH portal — "Raise New Request" type selector ────────────────────
+  if (screen === "cph_raise" && portal)
     return (
       <PortalHome
         portal={portal}
         onSelectRequest={(req) => { setRequest(req); setScreen("form"); }}
-        onBack={() => portal.id === "people" && peopleAuth
-          ? setScreen("portal")      // already authed — just go back to home
-          : setScreen("help_center")
-        }
+        onBack={() => setScreen("cph_portal")}
+      />
+    );
+
+  // ── 3b. CPH portal — My Tickets dashboard ─────────────────────────────────
+  if (screen === "cph_portal" && peopleAuth)
+    return (
+      <CphPortal
+        auth={peopleAuth}
+        onBack={reset}
+        onRaiseNew={() => setScreen("cph_raise")}
       />
     );
 
@@ -945,7 +1273,7 @@ export default function App() {
     return (
       <PeopleLogin
         portal={portal}
-        onAuth={(auth) => { setPeopleAuth(auth); setScreen("portal"); }}
+        onAuth={(auth) => { setPeopleAuth(auth); setScreen("cph_portal"); }}
         onBack={() => setScreen("help_center")}
       />
     );

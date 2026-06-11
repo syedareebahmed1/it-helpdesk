@@ -192,3 +192,115 @@ def create_people_ticket(body: PeopleTicketCreate, db: Session = Depends(get_db)
         "title": cph_title,
         "status": initial_status,
     }
+
+
+# ── CPH My Tickets portal ─────────────────────────────────────────────────────
+@router.get("/my-tickets")
+def get_my_tickets(email: str, db: Session = Depends(get_db)):
+    """Return all CPH tickets raised by this email address."""
+    email = email.strip().lower()
+    # Auth check
+    if email not in ALLOWED_EMAILS and not email.endswith("@bazaartech.com"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        return []
+
+    tickets = (
+        db.query(models.Ticket)
+        .filter(
+            models.Ticket.reporter_id == user.id,
+            models.Ticket.portal_source == "people",
+        )
+        .order_by(models.Ticket.created_at.desc())
+        .all()
+    )
+
+    result = []
+    for t in tickets:
+        linked = None
+        if t.linked_ticket:
+            linked = {
+                "ticket_number": t.linked_ticket.ticket_number,
+                "status": t.linked_ticket.status,
+                "portal_source": t.linked_ticket.portal_source,
+            }
+        result.append({
+            "id": t.id,
+            "ticket_number": t.ticket_number,
+            "title": t.title,
+            "status": t.status,
+            "ticket_type": t.ticket_type,
+            "priority": t.priority,
+            "created_at": t.created_at.isoformat(),
+            "updated_at": t.updated_at.isoformat(),
+            "linked_ticket": linked,
+        })
+    return result
+
+
+@router.get("/tickets/{ticket_number}")
+def get_cph_ticket(ticket_number: str, email: str, db: Session = Depends(get_db)):
+    """Get full CPH ticket detail — only accessible to the reporter."""
+    email = email.strip().lower()
+    if email not in ALLOWED_EMAILS and not email.endswith("@bazaartech.com"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    ticket = db.query(models.Ticket).filter(
+        models.Ticket.ticket_number == ticket_number.upper()
+    ).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Must be a CPH ticket
+    if ticket.portal_source != "people":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    fv = {f.field_key: f.field_value for f in ticket.field_values if not f.field_key.startswith("_")}
+
+    linked = None
+    if ticket.linked_ticket:
+        linked = {
+            "ticket_number": ticket.linked_ticket.ticket_number,
+            "title": ticket.linked_ticket.title,
+            "status": ticket.linked_ticket.status,
+            "portal_source": ticket.linked_ticket.portal_source,
+        }
+
+    comments = [
+        {
+            "id": c.id,
+            "author": c.author.full_name,
+            "body": c.body,
+            "created_at": c.created_at.isoformat(),
+        }
+        for c in sorted(ticket.comments, key=lambda x: x.created_at)
+        if not c.is_internal
+    ]
+
+    history = [
+        {
+            "field": h.field_name,
+            "from": h.old_value,
+            "to": h.new_value,
+            "at": h.created_at.isoformat(),
+        }
+        for h in sorted(ticket.history, key=lambda x: x.created_at)
+    ]
+
+    return {
+        "ticket_number": ticket.ticket_number,
+        "title": ticket.title,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "ticket_type": ticket.ticket_type,
+        "portal_source": ticket.portal_source,
+        "created_at": ticket.created_at.isoformat(),
+        "updated_at": ticket.updated_at.isoformat(),
+        "assignee": ticket.assignee.full_name if ticket.assignee else None,
+        "field_values": fv,
+        "linked_ticket": linked,
+        "comments": comments,
+        "history": history,
+    }

@@ -167,6 +167,14 @@ def update_ticket(
         _record_history(db, ticket.id, current_user.id, "status", ticket.status, body.status)
         ticket.status = body.status
 
+        # ── Sync status to linked ticket (CPH ↔ IT) ──────────────────────────
+        if ticket.linked_ticket_id:
+            linked = db.query(models.Ticket).filter(models.Ticket.id == ticket.linked_ticket_id).first()
+            if linked and linked.status != body.status:
+                _record_history(db, linked.id, current_user.id, "status", linked.status,
+                                f"{body.status} (synced from {ticket.ticket_number})")
+                linked.status = body.status
+
     if body.assignee_id is not None and body.assignee_id != ticket.assignee_id:
         old_assignee = ticket.assignee.full_name if ticket.assignee else None
         new_user = db.query(models.User).filter(models.User.id == body.assignee_id).first()
@@ -221,6 +229,19 @@ def add_comment(
         is_internal=body.is_internal,
     )
     db.add(comment)
+
+    # ── Mirror non-internal comments to linked ticket (CPH ↔ IT) ─────────────
+    if not body.is_internal and ticket.linked_ticket_id:
+        linked = db.query(models.Ticket).filter(models.Ticket.id == ticket.linked_ticket_id).first()
+        if linked:
+            mirror_body = f"[Synced from {ticket.ticket_number}] {body.body}"
+            db.add(models.TicketComment(
+                ticket_id=linked.id,
+                author_id=current_user.id,
+                body=mirror_body,
+                is_internal=False,
+            ))
+
     db.commit()
     db.refresh(comment)
     return comment
