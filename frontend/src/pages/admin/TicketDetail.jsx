@@ -33,7 +33,7 @@ const FIELD_LABELS = {
   resignation_date: "Resignation Date", last_working_day: "Last Working Day",
   last_working_date: "Last Working Date", reason_for_leaving: "Reason for Leaving",
   assets_to_return: "Assets to Return", city: "City", requested_for: "Requested For",
-  request_type: "Request Type", access_type: "Access Type", justification: "Justification",
+  request_type: "Request Type", access_type: "Access Type", commando_role: "Commando Role", justification: "Justification",
   scope_action: "Action", scope_name: "Scope / Permission", platform: "Platform",
   lending_module: "Lending Module", affected_system: "Affected System",
   raise_on_behalf_of: "Raise on Behalf Of", colleague_full_name: "Colleague Full Name",

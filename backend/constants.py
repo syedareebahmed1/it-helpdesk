@@ -62,8 +62,28 @@ TICKET_FORM_FIELDS = {
     ],
     "access_commando": [
         {"key": "requested_for", "label": "Requested For (Name/Email)", "type": "text", "required": True},
-        {"key": "access_type", "label": "Access Type", "type": "select",
-         "options": ["Read Only", "Read/Write", "Admin", "Remove Access"], "required": True},
+        {"key": "commando_role", "label": "Commando Role", "type": "select",
+         "options": [
+             "Telesales",
+             "Ops Supervisor",
+             "Finance",
+             "Ops",
+             "Growth King",
+             "Gro-mance",
+             "Marketplace Manager",
+             "Commercials",
+             "Commercial Supervisor",
+             "Brand Manager",
+             "Care Supervisor",
+             "Care Manager",
+             "Care Agent",
+             "S&P Team Level 1",
+             "S&P Team Level 2",
+             "S&P Team Level 3",
+             "Commando God",
+             "Rider Manager",
+             "Caps Upload",
+         ], "required": True},
         {"key": "mobile_number", "label": "Mobile Number", "type": "text", "required": False},
         {"key": "justification", "label": "Justification (Requirement)", "type": "textarea", "required": True},
     ],
@@ -510,28 +530,27 @@ NUCLEUS_APPROVERS = {
 }
 
 COMMANDO_APPROVERS = {
-    "Telesales": ["Afnan Anwar Khan"],
-    "Sales Return": ["Fahad Subzwari", "Toqeer Rehman", "Dayen Khan"],
-    "Ops Supervisor": ["Dayen Khan", "Kamran Khalil"],
-    "Finance": ["Dayen Khan", "Kamran Khalil"],
-    "Ops": ["Dayen Khan", "Kamran Khalil"],
-    "Growth King": ["Fahad Subzwari", "Toqeer Rehman", "Ozair"],
-    "Gro-mance": ["Fahad Subzwari", "Toqeer Rehman", "Ozair"],
-    "Marketplace Manager": ["Maria Gulzar"],
-    "Commercials": ["Uzair Akhtar"],
-    "Commerical Supervisor": ["Uzair Akhtar"],
-    "Brand Manager": ["Ayaz Arshad"],
-    "Care Supervisor": ["Toqeer Rehman", "Fahad Subzwari"],
-    "Care Manager": ["Toqeer Rehman", "Fahad Subzwari"],
-    "Care Agent": ["Toqeer Rehman", "Fahad Subzwari"],
-    "S&P Team Level 1": ["Toqeer Rehman", "Fahad Subzwari"],
-    "S&P Team Level 2": ["Toqeer Rehman", "Fahad Subzwari"],
-    "S&P Team Level 3": ["Toqeer Rehman", "Fahad Subzwari"],
-    "Commando God": ["Dayen Khan"],
-    "Rider Manager": ["Dayen Khan"],
-    "Commercial": ["Ozair"],
-    "Caps Upload": ["Rehman", "Kamran Khalil"],
-    "_default": ["Dayen Khan"],
+    # Exact mapping from Jira JMWE automation template
+    "Telesales":             ["Afnan Anwar Khan"],
+    "Ops Supervisor":        ["Dayen Khan", "Asharib"],
+    "Finance":               ["Umer Siddiqui"],
+    "Ops":                   ["Dayen Khan", "Asharib"],
+    "Growth King":           ["Fahad Subzwari", "Haider Khan", "Toqeer Rehman", "Ozair"],
+    "Gro-mance":             ["Fahad Subzwari", "Haider Khan", "Toqeer Rehman", "Ozair"],
+    "Marketplace Manager":   ["Maria Gulzar"],
+    "Commercials":           ["Zaid Asad", "Uzair Akhtar"],
+    "Commercial Supervisor": ["Zaid Asad", "Uzair Akhtar"],
+    "Brand Manager":         ["Ayaz Arshad"],
+    "Care Supervisor":       ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "Care Manager":          ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "Care Agent":            ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 1":      ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 2":      ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "S&P Team Level 3":      ["Rukhma Majeed", "Toqeer Rehman", "Fahad Subzwari"],
+    "Commando God":          ["Ammar Rizvi"],
+    "Rider Manager":         ["Asharib", "Taimoor"],
+    "Caps Upload":           ["Rehman", "Kamran Khalil"],
+    "_default":              ["Dayen Khan"],
 }
 
 
@@ -541,6 +560,6 @@ def get_approvers_for_ticket(ticket_type: str, field_values: dict) -> list:
         module = field_values.get("nucleus_module", "")
         return NUCLEUS_APPROVERS.get(module, NUCLEUS_APPROVERS["_default"])
     if ticket_type == "access_commando":
-        role = field_values.get("access_type", "")
+        role = field_values.get("commando_role", "")
         return COMMANDO_APPROVERS.get(role, COMMANDO_APPROVERS["_default"])
     return []
