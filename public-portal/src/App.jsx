@@ -1252,6 +1252,16 @@ export default function App() {
       />
     );
 
+  // ── 3. IT / other portals — request type selector ────────────────────────
+  if (screen === "portal" && portal)
+    return (
+      <PortalHome
+        portal={portal}
+        onSelectRequest={(req) => { setRequest(req); setScreen("form"); }}
+        onBack={() => setScreen("help_center")}
+      />
+    );
+
   // ── 3a. CPH portal — "Raise New Request" type selector ────────────────────
   if (screen === "cph_raise" && portal)
     return (
