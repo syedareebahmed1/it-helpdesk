@@ -12,4 +12,6 @@ export const ticketsApi = {
   delete: (id) => api.delete(`/api/tickets/${id}`),
   addComment: (id, body, isInternal = false) =>
     api.post(`/api/tickets/${id}/comments`, { body, is_internal: isInternal }),
+  updateFields: (id, fields) =>
+    api.put(`/api/tickets/${id}/fields`, { fields }),
 };

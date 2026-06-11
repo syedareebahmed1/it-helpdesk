@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import Optional
+from pydantic import BaseModel
 from database import get_db
 import models, schemas
 from deps import get_current_user, require_agent
@@ -245,3 +246,59 @@ def add_comment(
     db.commit()
     db.refresh(comment)
     return comment
+
+
+# ── Edit field values ──────────────────────────────────────────────────────────
+class FieldValueEdit(BaseModel):
+    field_key: str
+    field_value: str
+
+class FieldValuesUpdate(BaseModel):
+    fields: list[FieldValueEdit]
+
+
+@router.put("/{ticket_id}/fields", response_model=schemas.TicketOut)
+def update_field_values(
+    ticket_id: int,
+    body: FieldValuesUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_agent),
+):
+    """Update one or more field values on a ticket (agent/manager only)."""
+    ticket = db.query(models.Ticket).filter(models.Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    for edit in body.fields:
+        fv = db.query(models.TicketFieldValue).filter_by(
+            ticket_id=ticket_id, field_key=edit.field_key
+        ).first()
+        if fv:
+            if fv.field_value != edit.field_value:
+                _record_history(db, ticket_id, current_user.id,
+                                f"field:{edit.field_key}", fv.field_value, edit.field_value)
+                fv.field_value = edit.field_value
+        else:
+            db.add(models.TicketFieldValue(
+                ticket_id=ticket_id,
+                field_key=edit.field_key,
+                field_value=edit.field_value,
+            ))
+
+        # ── Sync to linked ticket too ──────────────────────────────────────────
+        if ticket.linked_ticket_id:
+            linked_fv = db.query(models.TicketFieldValue).filter_by(
+                ticket_id=ticket.linked_ticket_id, field_key=edit.field_key
+            ).first()
+            if linked_fv:
+                linked_fv.field_value = edit.field_value
+            else:
+                db.add(models.TicketFieldValue(
+                    ticket_id=ticket.linked_ticket_id,
+                    field_key=edit.field_key,
+                    field_value=edit.field_value,
+                ))
+
+    db.commit()
+    db.refresh(ticket)
+    return ticket

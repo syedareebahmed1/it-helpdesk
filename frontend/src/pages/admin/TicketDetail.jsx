@@ -46,6 +46,93 @@ const FIELD_LABELS = {
   impact_level: "Impact Level", application_requested: "Application Requested",
 };
 
+/* ── Inline-editable field row ─────────────────────────────────────────────── */
+function EditableFields({ fields, ticketId, onSaved }) {
+  const [editing, setEditing] = useState(null);   // field_key being edited
+  const [draft,   setDraft]   = useState("");
+  const [saving,  setSaving]  = useState(false);
+
+  const startEdit = (fv) => { setEditing(fv.field_key); setDraft(fv.field_value || ""); };
+  const cancel    = ()   => { setEditing(null); setDraft(""); };
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      await ticketsApi.updateFields(ticketId, [{ field_key: editing, field_value: draft }]);
+      onSaved();
+      cancel();
+    } catch (e) {
+      alert("Save failed: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="bg-white border border-[#dfe1e6] rounded-lg mb-4 overflow-hidden">
+      <div className="px-5 py-3 border-b border-[#dfe1e6] bg-[#f7f8f9] flex items-center justify-between">
+        <h2 className="text-[13px] font-semibold text-[#172b4d]">Request Details</h2>
+        <span className="text-[11px] text-[#8590a2]">Click any field to edit</span>
+      </div>
+      <div className="p-5">
+        <dl className="grid grid-cols-2 gap-x-10 gap-y-4">
+          {fields.map((fv) => (
+            <div key={fv.field_key} className="group relative">
+              <dt className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-0.5">
+                {FIELD_LABELS[fv.field_key] || fv.field_key.replace(/_/g, " ")}
+              </dt>
+
+              {editing === fv.field_key ? (
+                /* ── Edit mode ── */
+                <div>
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
+                    className="w-full border border-[#4c9aff] rounded-md px-2.5 py-1.5 text-[13px] text-[#172b4d] focus:outline-none focus:ring-2 focus:ring-[#4c9aff]"
+                  />
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      onClick={save}
+                      disabled={saving}
+                      className="text-[11px] font-semibold bg-[#0052cc] hover:bg-[#0747a6] text-white px-3 py-1 rounded disabled:opacity-50"
+                    >
+                      {saving ? "Saving…" : "Save"}
+                    </button>
+                    <button onClick={cancel} className="text-[11px] text-[#6b778c] hover:text-[#172b4d] px-2 py-1">
+                      Cancel
+                    </button>
+                    <span className="text-[10px] text-[#8590a2]">Enter to save · Esc to cancel</span>
+                  </div>
+                </div>
+              ) : (
+                /* ── View mode with hover-edit ── */
+                <dd
+                  onClick={() => startEdit(fv)}
+                  className="flex items-start gap-2 cursor-pointer rounded-md -mx-1 px-1 py-0.5 hover:bg-[#f7f8f9] transition-colors group/field"
+                >
+                  <span className="text-[13px] text-[#172b4d] font-medium flex-1">
+                    <FieldValue val={fv.field_value} />
+                  </span>
+                  <svg
+                    className="w-3.5 h-3.5 text-[#8590a2] opacity-0 group-hover/field:opacity-100 flex-shrink-0 mt-0.5 transition-opacity"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </dd>
+              )}
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
 function Avatar({ name, size = 7 }) {
   if (!name) return null;
   const colors = ["#0052cc","#00875a","#403294","#008da6","#974f0c","#de350b"];
@@ -217,27 +304,13 @@ export default function AdminTicketDetail() {
               </div>
             </div>
 
-            {/* Request Details card */}
+            {/* Request Details card — inline editable */}
             {visibleFields.length > 0 && (
-              <section className="bg-white border border-[#dfe1e6] rounded-lg mb-4 overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#dfe1e6] bg-[#f7f8f9]">
-                  <h2 className="text-[13px] font-semibold text-[#172b4d]">Request Details</h2>
-                </div>
-                <div className="p-5">
-                  <dl className="grid grid-cols-2 gap-x-10 gap-y-4">
-                    {visibleFields.map((fv) => (
-                      <div key={fv.field_key}>
-                        <dt className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-0.5">
-                          {FIELD_LABELS[fv.field_key] || fv.field_key.replace(/_/g, " ")}
-                        </dt>
-                        <dd className="text-[13px] text-[#172b4d] font-medium">
-                          <FieldValue val={fv.field_value} />
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              </section>
+              <EditableFields
+                fields={visibleFields}
+                ticketId={ticket.id}
+                onSaved={load}
+              />
             )}
 
             {/* Description */}
