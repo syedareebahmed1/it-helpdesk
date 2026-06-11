@@ -40,9 +40,14 @@ class Ticket(Base):
     reporter_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     department: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    portal_source: Mapped[str | None] = mapped_column(String, nullable=True)          # "it" | "people"
+    linked_ticket_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("tickets.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    linked_ticket: Mapped["Ticket | None"] = relationship(
+        "Ticket", foreign_keys=[linked_ticket_id], remote_side="Ticket.id", uselist=False
+    )
     assignee: Mapped["User | None"] = relationship(
         "User", foreign_keys=[assignee_id], back_populates="assigned_tickets"
     )

@@ -109,6 +109,16 @@ class HistoryOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class LinkedTicketMini(BaseModel):
+    id: int
+    ticket_number: str
+    title: str
+    status: str
+    portal_source: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
 class TicketOut(BaseModel):
     id: int
     ticket_number: str
@@ -120,6 +130,8 @@ class TicketOut(BaseModel):
     reporter: UserMini
     department: Optional[str] = None
     description: Optional[str] = None
+    portal_source: Optional[str] = None
+    linked_ticket: Optional[LinkedTicketMini] = None
     created_at: datetime
     updated_at: datetime
     field_values: list[FieldValueOut] = []

@@ -426,14 +426,104 @@ function FieldInput({ field, value, onChange }) {
   return null;
 }
 
+/* ─── People Portal Login Gate ───────────────────────────────────────────── */
+function PeopleLogin({ portal, onAuth, onBack }) {
+  const [name,  setName]  = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault(); setError(""); setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/people-portal/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase() }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Access denied");
+      }
+      const data = await res.json();
+      onAuth(data);
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f7f8f9]">
+      <TopNav onHome={onBack} />
+      <HeroBanner>
+        <div className="px-6 py-6">
+          <div className="max-w-lg mx-auto">
+            <p className="text-[13px] text-white/60">
+              <button onClick={onBack} className="hover:text-white transition-colors">Help Center</button>
+              <span className="mx-2">/</span>
+              <span className="text-white/90">{portal.name}</span>
+            </p>
+          </div>
+        </div>
+      </HeroBanner>
+
+      <div className="max-w-lg mx-auto px-6 py-10">
+        <div className="bg-white border border-[#dfe1e6] rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-[#0052cc] px-6 py-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white flex-shrink-0">{portal.icon}</div>
+            <div>
+              <h1 className="text-[17px] font-bold text-white">{portal.name}</h1>
+              <p className="text-[12px] text-white/70">Restricted access — authorised users only</p>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="flex items-start gap-3 bg-[#fffae6] border border-[#ffe380] rounded-lg px-4 py-3 mb-6">
+              <svg className="w-4 h-4 text-[#974f0c] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+              </svg>
+              <p className="text-[12px] text-[#974f0c]">This portal is for authorised People &amp; HR team members only. Please verify your identity to continue.</p>
+            </div>
+            {error && (
+              <div className="mb-4 flex items-start gap-2 bg-[#ffebe6] border border-[#ff8f73] text-[#bf2600] text-[13px] rounded-lg px-4 py-3">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-[13px] font-semibold text-[#172b4d] mb-1.5">Full Name <span className="text-[#de350b]">*</span></label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ali Khan"
+                  className="w-full border border-[#dfe1e6] rounded-lg px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff] placeholder-[#8590a2]" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-semibold text-[#172b4d] mb-1.5">Work Email <span className="text-[#de350b]">*</span></label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="ali@bazaartech.com"
+                  className="w-full border border-[#dfe1e6] rounded-lg px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff] placeholder-[#8590a2]" />
+              </div>
+              <button type="submit" disabled={loading}
+                className="w-full bg-[#0052cc] hover:bg-[#0747a6] disabled:opacity-50 text-white font-semibold py-2.5 px-6 rounded-lg text-[14px] transition-colors shadow-sm flex items-center justify-center gap-2">
+                {loading
+                  ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Verifying…</>
+                  : "Verify & Continue →"}
+              </button>
+              <button type="button" onClick={onBack} className="w-full text-center text-[13px] text-[#6b778c] hover:text-[#172b4d] transition-colors py-1">← Back to Help Center</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Request form ───────────────────────────────────────────────────────── */
-function RequestForm({ portal, request, onBack, onSuccess }) {
+function RequestForm({ portal, request, onBack, onSuccess, prefillName = "", prefillEmail = "" }) {
   const [fields, setFields] = useState([]);
   const [values, setValues] = useState({});
-  const [name, setName]     = useState("");
-  const [email, setEmail]   = useState("");
+  const [name, setName]     = useState(prefillName);
+  const [email, setEmail]   = useState(prefillEmail);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]   = useState("");
+
+  const isPeople = portal?.id === "people" || portal?.id === "3p_people" || portal?.id === "contractual";
 
   useEffect(() => {
     fetch(`${API}/api/public/form-fields/${request.type}`)
@@ -446,7 +536,9 @@ function RequestForm({ portal, request, onBack, onSuccess }) {
     e.preventDefault(); setError(""); setSubmitting(true);
     try {
       const field_values = Object.entries(values).filter(([, v]) => v).map(([field_key, field_value]) => ({ field_key, field_value }));
-      const res = await fetch(`${API}/api/public/tickets`, {
+      // People portal → dual ticket endpoint
+      const endpoint = isPeople ? `${API}/api/people-portal/tickets` : `${API}/api/public/tickets`;
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submitter_name: name, submitter_email: email, ticket_type: request.type, field_values }),
@@ -495,13 +587,15 @@ function RequestForm({ portal, request, onBack, onSuccess }) {
             <div className="p-5 grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[13px] font-semibold text-[#172b4d] mb-1.5">Full Name <span className="text-[#de350b]">*</span></label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ali Khan"
-                  className="w-full border border-[#dfe1e6] rounded-md px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff] transition-colors placeholder-[#8590a2]" />
+                <input type="text" value={name} onChange={(e) => !prefillName && setName(e.target.value)} required placeholder="Ali Khan"
+                  readOnly={!!prefillName}
+                  className={`w-full border border-[#dfe1e6] rounded-md px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none transition-colors placeholder-[#8590a2] ${prefillName ? "bg-[#f7f8f9] cursor-not-allowed text-[#44546f]" : "focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff]"}`} />
               </div>
               <div>
                 <label className="block text-[13px] font-semibold text-[#172b4d] mb-1.5">Email Address <span className="text-[#de350b]">*</span></label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="ali@bazaartech.com"
-                  className="w-full border border-[#dfe1e6] rounded-md px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff] transition-colors placeholder-[#8590a2]" />
+                <input type="email" value={email} onChange={(e) => !prefillEmail && setEmail(e.target.value)} required placeholder="ali@bazaartech.com"
+                  readOnly={!!prefillEmail}
+                  className={`w-full border border-[#dfe1e6] rounded-md px-3 py-2.5 text-[14px] text-[#172b4d] focus:outline-none transition-colors placeholder-[#8590a2] ${prefillEmail ? "bg-[#f7f8f9] cursor-not-allowed text-[#44546f]" : "focus:ring-2 focus:ring-[#4c9aff] focus:border-[#4c9aff]"}`} />
               </div>
             </div>
           </div>
@@ -546,34 +640,83 @@ function RequestForm({ portal, request, onBack, onSuccess }) {
 
 /* ─── Success screen ─────────────────────────────────────────────────────── */
 function Success({ ticket, onReset }) {
+  const isDual = !!ticket.cph_ticket_number; // People portal dual ticket
+
   return (
     <div className="min-h-screen bg-[#f7f8f9]">
       <TopNav onHome={onReset} />
       <HeroBanner><div className="py-4" /></HeroBanner>
 
-      <div className="max-w-lg mx-auto px-6 py-16 text-center">
+      <div className="max-w-xl mx-auto px-6 py-12 text-center">
         <div className="w-16 h-16 bg-[#e3fcef] rounded-full flex items-center justify-center mx-auto mb-5">
           <svg className="w-8 h-8 text-[#00875a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
           </svg>
         </div>
         <h1 className="text-[22px] font-bold text-[#172b4d] mb-2">Request Submitted</h1>
-        <p className="text-[14px] text-[#6b778c] mb-8">Your request has been received. The team will pick it up shortly.</p>
+        <p className="text-[14px] text-[#6b778c] mb-8">
+          {isDual
+            ? "Your request has been received and automatically routed. Two linked tickets have been created."
+            : "Your request has been received. The team will pick it up shortly."}
+        </p>
 
-        <div className="bg-white border border-[#dfe1e6] rounded-lg p-6 mb-8 text-left shadow-sm">
-          <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-2">Reference Number</p>
-          <p className="text-[28px] font-bold text-[#0052cc]">{ticket.ticket_number}</p>
-          <p className="text-[13px] text-[#44546f] mt-2">{ticket.title}</p>
-          <div className="mt-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#fff0b3] text-[#172b4d]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-              {ticket.status}
-            </span>
+        {isDual ? (
+          /* ── Dual ticket success card ── */
+          <div className="space-y-3 mb-8">
+            {/* CPH ticket */}
+            <div className="bg-white border border-[#dfe1e6] rounded-lg p-5 text-left shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-[#e9f2ff] text-[#0052cc] text-[11px] font-bold px-2 py-0.5 rounded">📋 People Helpdesk</span>
+                <span className="text-[12px] text-[#6b778c]">Original ticket</span>
+              </div>
+              <p className="text-[28px] font-bold text-[#0052cc]">{ticket.cph_ticket_number}</p>
+              <p className="text-[13px] text-[#44546f] mt-1">{ticket.title}</p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+                <span className="text-[11px] font-semibold text-[#974f0c]">{ticket.status}</span>
+              </div>
+            </div>
+
+            {/* IT child ticket */}
+            <div className="relative">
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-px h-3 bg-[#dfe1e6]" />
+              <div className="flex items-center justify-center gap-2 text-[11px] text-[#8590a2] mb-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                Linked to IT task
+              </div>
+            </div>
+            <div className="bg-white border border-[#dfe1e6] rounded-lg p-5 text-left shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-[#f1f2f4] text-[#44546f] text-[11px] font-bold px-2 py-0.5 rounded">🖥️ IT Service Desk</span>
+                <span className="text-[12px] text-[#6b778c]">Child / IT task</span>
+              </div>
+              <p className="text-[28px] font-bold text-[#44546f]">{ticket.it_ticket_number}</p>
+              <p className="text-[12px] text-[#6b778c] mt-1">Auto-assigned to IT team for action</p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0052cc]" />
+                <span className="text-[11px] font-semibold text-[#0052cc]">WAITING FOR SUPPORT</span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ── Single ticket success card ── */
+          <div className="bg-white border border-[#dfe1e6] rounded-lg p-6 mb-8 text-left shadow-sm">
+            <p className="text-[11px] font-semibold text-[#6b778c] uppercase tracking-wide mb-2">Reference Number</p>
+            <p className="text-[28px] font-bold text-[#0052cc]">{ticket.ticket_number}</p>
+            <p className="text-[13px] text-[#44546f] mt-2">{ticket.title}</p>
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#fff0b3] text-[#172b4d]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+                {ticket.status}
+              </span>
+            </div>
+          </div>
+        )}
 
         <p className="text-[12px] text-[#8590a2] mb-6">
-          Save your reference number <strong className="text-[#172b4d]">{ticket.ticket_number}</strong> to track your request.
+          {isDual
+            ? <>Save <strong className="text-[#172b4d]">{ticket.cph_ticket_number}</strong> (People) and <strong className="text-[#172b4d]">{ticket.it_ticket_number}</strong> (IT) to track this request.</>
+            : <>Save your reference number <strong className="text-[#172b4d]">{ticket.ticket_number}</strong> to track your request.</>}
         </p>
 
         <button onClick={onReset} className="bg-[#0052cc] hover:bg-[#0747a6] text-white font-semibold py-2.5 px-6 rounded-md text-[14px] transition-colors shadow-sm">
@@ -586,24 +729,73 @@ function Success({ ticket, onReset }) {
 
 /* ─── App root ───────────────────────────────────────────────────────────── */
 export default function App() {
-  const [screen,   setScreen]   = useState("help_center"); // help_center | portal | form | success
-  const [portal,   setPortal]   = useState(null);
-  const [request,  setRequest]  = useState(null);
-  const [ticket,   setTicket]   = useState(null);
+  const [screen,     setScreen]     = useState("help_center"); // help_center | people_login | portal | form | success
+  const [portal,     setPortal]     = useState(null);
+  const [request,    setRequest]    = useState(null);
+  const [ticket,     setTicket]     = useState(null);
+  const [peopleAuth, setPeopleAuth] = useState(null); // { name, email } after People portal auth
+
+  const reset = () => { setScreen("help_center"); setPortal(null); setRequest(null); setTicket(null); setPeopleAuth(null); };
 
   const handleBack = (to) => {
-    if (to === "home")   { setScreen("help_center"); setPortal(null); setRequest(null); }
-    if (to === "portal") { setScreen("portal"); setRequest(null); }
+    if (to === "home")         { reset(); }
+    if (to === "portal")       { setScreen("portal"); setRequest(null); }
+    if (to === "people_login") { setScreen("people_login"); setRequest(null); }
   };
 
+  // ── 1. Success screen ──────────────────────────────────────────────────────
   if (screen === "success" && ticket)
-    return <Success ticket={ticket} onReset={() => { setScreen("help_center"); setPortal(null); setRequest(null); setTicket(null); }} />;
+    return <Success ticket={ticket} onReset={reset} />;
 
+  // ── 2. Request form ────────────────────────────────────────────────────────
   if (screen === "form" && portal && request)
-    return <RequestForm portal={portal} request={request} onBack={handleBack} onSuccess={(t) => { setTicket(t); setScreen("success"); }} />;
+    return (
+      <RequestForm
+        portal={portal}
+        request={request}
+        onBack={handleBack}
+        onSuccess={(t) => { setTicket(t); setScreen("success"); }}
+        prefillName={peopleAuth?.name || ""}
+        prefillEmail={peopleAuth?.email || ""}
+      />
+    );
 
+  // ── 3. Portal home (request type list) ────────────────────────────────────
   if (screen === "portal" && portal)
-    return <PortalHome portal={portal} onSelectRequest={(req) => { setRequest(req); setScreen("form"); }} onBack={() => setScreen("help_center")} />;
+    return (
+      <PortalHome
+        portal={portal}
+        onSelectRequest={(req) => { setRequest(req); setScreen("form"); }}
+        onBack={() => portal.id === "people" && peopleAuth
+          ? setScreen("portal")      // already authed — just go back to home
+          : setScreen("help_center")
+        }
+      />
+    );
 
-  return <HelpCenter onSelectPortal={(p) => { setPortal(p); setScreen("portal"); }} />;
+  // ── 4. People portal login gate ────────────────────────────────────────────
+  if (screen === "people_login" && portal)
+    return (
+      <PeopleLogin
+        portal={portal}
+        onAuth={(auth) => { setPeopleAuth(auth); setScreen("portal"); }}
+        onBack={() => setScreen("help_center")}
+      />
+    );
+
+  // ── 5. Help Center (landing) ───────────────────────────────────────────────
+  return (
+    <HelpCenter
+      onSelectPortal={(p) => {
+        setPortal(p);
+        if (p.id === "people") {
+          // People portal requires email verification first
+          setPeopleAuth(null);
+          setScreen("people_login");
+        } else {
+          setScreen("portal");
+        }
+      }}
+    />
+  );
 }

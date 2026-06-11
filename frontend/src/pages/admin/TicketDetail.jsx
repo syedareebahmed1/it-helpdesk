@@ -167,6 +167,37 @@ export default function AdminTicketDetail() {
           {/* ── Main column ── */}
           <div className="flex-1 px-8 py-6 min-w-0">
 
+            {/* ── Linked ticket banner ── */}
+            {ticket.linked_ticket && (
+              <div className="mb-5 flex items-center gap-3 bg-[#e9f2ff] border border-[#b3d4ff] rounded-lg px-4 py-3">
+                <svg className="w-4 h-4 text-[#0052cc] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <div className="flex-1 text-[13px]">
+                  <span className="text-[#6b778c]">Linked ticket — </span>
+                  <span className="font-semibold text-[#172b4d]">
+                    {ticket.linked_ticket.portal_source === "people" ? "📋 People Helpdesk" : "🖥️ IT Task"}:
+                  </span>
+                  <button
+                    onClick={() => navigate(`/admin/tickets/${ticket.linked_ticket.id}`)}
+                    className="ml-1.5 font-bold text-[#0052cc] hover:underline"
+                  >
+                    {ticket.linked_ticket.ticket_number}
+                  </button>
+                  <span className="ml-2 text-[#6b778c]">— {ticket.linked_ticket.title}</span>
+                </div>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white border border-[#b3d4ff] text-[#0052cc]">
+                  {ticket.linked_ticket.status}
+                </span>
+                <button
+                  onClick={() => navigate(`/admin/tickets/${ticket.linked_ticket.id}`)}
+                  className="text-[#0052cc] hover:underline text-[12px] font-medium whitespace-nowrap"
+                >
+                  View →
+                </button>
+              </div>
+            )}
+
             {/* Ticket title + meta */}
             <div className="mb-6">
               <div className="flex items-start gap-3 mb-2">
