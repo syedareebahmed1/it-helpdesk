@@ -330,7 +330,10 @@ function PortalCard({ portal, onSelect, featured }) {
 /* ─── Portal home (request type list) ────────────────────────────────────── */
 /* ─── Request List with optional groups ──────────────────────────────────── */
 function RequestList({ requests, onSelectRequest }) {
-  const [openGroups, setOpenGroups] = useState({});
+  // Build initial state with all groups open
+  const initialOpen = {};
+  requests.forEach((req) => { if (req.group) initialOpen[req.group] = true; });
+  const [openGroups, setOpenGroups] = useState(initialOpen);
 
   // Separate grouped vs ungrouped requests
   const groups = [];
