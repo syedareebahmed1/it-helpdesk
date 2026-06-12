@@ -21,9 +21,20 @@ It maps Jira field types → our form field types:
 import os
 import sys
 import json
+import ssl
 import base64
 import urllib.request
 import urllib.error
+
+# ── SSL context (handles macOS missing-certs issue) ──────────────────────────
+try:
+    import certifi
+    _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+except Exception:
+    # Fallback: unverified context (only used locally for a trusted host)
+    _SSL_CTX = ssl.create_default_context()
+    _SSL_CTX.check_hostname = False
+    _SSL_CTX.verify_mode = ssl.CERT_NONE
 
 BASE  = os.environ.get("JIRA_BASE",  "https://bazaar.atlassian.net").rstrip("/")
 EMAIL = os.environ.get("JIRA_EMAIL", "")
@@ -45,7 +56,7 @@ def _get(path, params=None):
         "Accept": "application/json",
     })
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         print(f"  ! HTTP {e.code} on {path}: {e.read().decode()[:200]}", file=sys.stderr)
