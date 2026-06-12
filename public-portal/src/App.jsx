@@ -328,31 +328,26 @@ function PortalCard({ portal, onSelect, featured }) {
 }
 
 /* ─── Portal home (request type list) ────────────────────────────────────── */
-/* ─── Request List with optional groups ──────────────────────────────────── */
+/* ─── Request List with optional groups (Jira-style cards) ──────────────── */
 function RequestList({ requests, onSelectRequest }) {
-  // Build initial state with all groups open
-  const initialOpen = {};
-  requests.forEach((req) => { if (req.group) initialOpen[req.group] = true; });
-  const [openGroups, setOpenGroups] = useState(initialOpen);
+  const [activeGroup, setActiveGroup] = useState(null);
 
-  // Separate grouped vs ungrouped requests
-  const groups = [];
-  const seen = {};
+  // Build ordered list: groups (deduplicated) + ungrouped items
+  const groupMap = {};
+  const orderedKeys = []; // to preserve insertion order
   const ungrouped = [];
 
   requests.forEach((req) => {
     if (req.group) {
-      if (!seen[req.group]) {
-        seen[req.group] = true;
-        groups.push({ name: req.group, items: [] });
+      if (!groupMap[req.group]) {
+        groupMap[req.group] = [];
+        orderedKeys.push(req.group);
       }
-      groups[groups.findIndex(g => g.name === req.group)].items.push(req);
+      groupMap[req.group].push(req);
     } else {
       ungrouped.push(req);
     }
   });
-
-  const toggleGroup = (name) => setOpenGroups(p => ({ ...p, [name]: !p[name] }));
 
   const RequestRow = ({ req }) => (
     <button
@@ -369,39 +364,58 @@ function RequestList({ requests, onSelectRequest }) {
     </button>
   );
 
+  // If a group is selected → show sub-items with a back link
+  if (activeGroup) {
+    const items = groupMap[activeGroup] || [];
+    return (
+      <div>
+        {/* Back to groups */}
+        <button
+          onClick={() => setActiveGroup(null)}
+          className="flex items-center gap-1.5 text-[#0052cc] text-[13px] font-medium mb-4 hover:underline"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+          </svg>
+          Back
+        </button>
+        <h3 className="text-[16px] font-bold text-[#172b4d] mb-3">{activeGroup}</h3>
+        <div className="divide-y divide-[#f1f2f4]">
+          {items.map((req, i) => <RequestRow key={`${req.type}-${i}`} req={req} />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="divide-y divide-[#f1f2f4]">
-      {/* Grouped sections */}
-      {groups.map((g) => {
-        const isOpen = !!openGroups[g.name];
+    <div className="space-y-3">
+      {/* Group cards — Jira style */}
+      {orderedKeys.map((name) => {
+        const items = groupMap[name];
+        const subtitle = items.map(r => r.label).join(", ");
         return (
-          <div key={g.name}>
-            {/* Group header row */}
-            <button
-              onClick={() => toggleGroup(g.name)}
-              className="w-full flex items-center justify-between py-4 px-3 -mx-3 hover:bg-[#f7f8f9] rounded-lg transition-colors text-left"
-            >
-              <span className="text-[14px] font-bold text-[#172b4d]">{g.name}</span>
-              <svg
-                className={`w-4 h-4 text-[#626f86] transition-transform flex-shrink-0 ${isOpen ? "rotate-90" : ""}`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-            {/* Sub-items */}
-            {isOpen && (
-              <div className="ml-4 border-l-2 border-[#e9f2ff] pl-4 pb-2">
-                {g.items.map((req, i) => <RequestRow key={`${req.type}-${i}`} req={req} />)}
-              </div>
-            )}
-          </div>
+          <button
+            key={name}
+            onClick={() => setActiveGroup(name)}
+            className="w-full flex items-center justify-between border border-[#dfe1e6] rounded-lg px-5 py-4 hover:border-[#4c9aff] hover:bg-[#f4f7ff] transition-all text-left group shadow-sm"
+          >
+            <div>
+              <p className="text-[14px] font-bold text-[#172b4d] group-hover:text-[#0052cc] transition-colors">{name}</p>
+              <p className="text-[12px] text-[#0052cc] mt-0.5">{subtitle}</p>
+            </div>
+            <svg className="w-4 h-4 text-[#8590a2] group-hover:text-[#0052cc] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
         );
       })}
-      {/* Ungrouped items */}
-      {ungrouped.map((req, i) => (
-        <RequestRow key={`${req.type}-${i}`} req={req} />
-      ))}
+
+      {/* Ungrouped items — flat list below cards */}
+      {ungrouped.length > 0 && (
+        <div className={`divide-y divide-[#f1f2f4] ${orderedKeys.length > 0 ? "pt-2" : ""}`}>
+          {ungrouped.map((req, i) => <RequestRow key={`${req.type}-${i}`} req={req} />)}
+        </div>
+      )}
     </div>
   );
 }
